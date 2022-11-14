@@ -1,0 +1,84 @@
+#!/bin/bash -l
+### Script for preparing the WindsorBody-Case with the c1g1-mesh from 
+### AutoCFD3-workshop
+### Upstream CFD, 2022
+
+# EXIT ON ERROR
+set -e
+
+
+# blockmesh and feature extraction
+prepareMesh=false                       # to setup a new case folder
+devFlowField=true                       # to setup a new case folder with a developed DDES-field
+
+### Set nice level if required
+#NI=" "
+NI="nice -n 19"
+
+### directories
+logDir="logFiles"
+if $devFlowField; then
+    srcDir="WindsorBody_OF-v2206_incomp_AutoCFD3g1_devFlow.orig"
+else
+    srcDir="WindsorBody_OF-v2206_incomp_AutoCFD3g1.orig"
+fi
+runDir="WindsorBody_OF-v2206_incomp_AutoCFD3g1_DDES"
+
+### Load modules as required
+module load gnu/11
+module load openmpi/3
+module load OpenFOAM/v2206
+
+### number procs for decomposition
+nProcs=16
+
+# function to set parameters in caseDefinition...
+function setInputParam () 
+{
+    parameter=${1}
+    value=${2}
+    comment=`grep -w $parameter system/include/caseDefinition | cut -d ";" -f 2 |  sed 's/^\s*//'`
+    varVal=`printf "%-20s%-17s%s" "$parameter" "$value;" "$comment"`
+    sed -i "s:^${parameter} .*$:${varVal}:" system/include/caseDefinition
+    echo $varVal
+}
+
+use_control="system/controlDict.DDES.init"
+use_decompose="-decomposeParDict system/decomposeParDict"
+use_parallel="-parallel $use_decompose"
+
+if $prepareMesh; then
+   time (
+   echo "Prepare case folder ..."
+   rm -rf $runDir
+   cp -a $srcDir $runDir
+   cp -r Scripts/ $runDir
+   cd $runDir
+   cp system/fvSchemes.pre system/fvSchemes
+   cp $use_control system/controlDict
+   mkdir -p $logDir
+   cd constant
+   tar -xvzf polyMesh.WindsorBody_AutoCFD3_c1g1.tar.gz > ../$logDir/01_unpackMesh.log 2>&1 || exit 1
+   cd ..
+   setInputParam nCores $nProcs
+   $NI decomposePar $use_decompose > $logDir/02_decomposePar.log 2>&1 || exit 1
+   )
+   echo
+fi
+
+if $devFlowField; then
+   time (
+   echo "Prepare case folder with developed flowfield ..."
+   rm -rf $runDir
+   cp -a $srcDir $runDir
+   cp -r Scripts/ $runDir
+   cd $runDir
+   cp system/fvSchemes.pre system/fvSchemes
+   cp $use_control system/controlDict
+   mkdir -p $logDir
+   setInputParam nCores $nProcs
+   $NI decomposePar $use_decompose -latestTime > $logDir/02_decomposePar.log 2>&1 || exit 1
+   )
+   echo
+fi
+echo "Finished."
