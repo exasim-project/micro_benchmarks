@@ -1,3 +1,2 @@
 #!/bin/bash -l
 rm -rf processor* postProcessing logFiles 0
-rm -rf constant/extendedFeatureEdgeMesh constant/polyMesh

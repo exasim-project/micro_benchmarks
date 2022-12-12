@@ -1,2 +1,2 @@
 #!/bin/bash
-rm -r WindsorBody_OF-v2206_incomp_AutoCFD3g1_test01 slurm-*.out images/*.png images/*.pdf
+rm -r run_1 slurm-*.out images/*.png images/*.pdf

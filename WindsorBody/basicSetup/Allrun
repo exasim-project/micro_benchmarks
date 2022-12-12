@@ -69,7 +69,7 @@ if $run_initial_RANS; then
     cp system/fvSolution.RANS system/fvSolution
     cp constant/turbulenceProperties.RANS constant/turbulenceProperties
 
-	restore0Dir -processor
+    restore0Dir -processor
     $parEx potentialFoam -initialiseUBCs -parallel > $logDir/21_potentialFoam.log 2>&1 || exit 1
     $parEx applyBoundaryLayer -ybl "0.0450244" -parallel > $logDir/22_applyBoundaryLayer.log 2>&1 || exit 1
 
@@ -87,7 +87,7 @@ if $run_initial_DDES; then
     cp system/fvSolution.DDES system/fvSolution
     cp constant/turbulenceProperties.LES constant/turbulenceProperties
 
-	restore0Dir -processor
+    restore0Dir -processor
     $parEx potentialFoam -initialiseUBCs -parallel > $logDir/21_potentialFoam.log 2>&1 || exit 1
     $parEx applyBoundaryLayer -ybl "0.0450244" -parallel > $logDir/22_applyBoundaryLayer.log 2>&1 || exit 1
 
