@@ -15,7 +15,7 @@ import IOFoamLib as io
 if len(sys.argv) > 1:
     runDir          = os.path.abspath(sys.argv[1])
 else:
-    runDir          = '../../WindsorBody_OF-v2206_incomp_AutoCFD3g1_test04-DDES'
+    runDir          = '../../run_1'
 
 
 rawDataDir      = 'postProcessing'

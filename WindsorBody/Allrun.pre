@@ -6,31 +6,25 @@
 # EXIT ON ERROR
 set -e
 
+## USER EDITABLE PART ####################################################################################
 
 # blockmesh and feature extraction
-prepareMesh=false                       # to setup a new case folder
-devFlowField=true                       # to setup a new case folder with a developed DDES-field
-
-### Set nice level if required
-#NI=" "
-NI="nice -n 19"
+getMesh=false                       # Download mesh files 
+devFlowField=false                  # Download restart time to setup case with a developed DDES-field
+prepareCase=true                    # Setup case in new run directory
 
 ### directories
 logDir="logFiles"
-if $devFlowField; then
-    srcDir="WindsorBody_OF-v2206_incomp_AutoCFD3g1_devFlow.orig"
-else
-    srcDir="WindsorBody_OF-v2206_incomp_AutoCFD3g1.orig"
-fi
-runDir="WindsorBody_OF-v2206_incomp_AutoCFD3g1_DDES"
-
-### Load modules as required
-module load gnu/11
-module load openmpi/3
-module load OpenFOAM/v2206
+runDir="run_1"
 
 ### number procs for decomposition
 nProcs=16
+
+use_control="system/controlDict.DDES.init"
+use_decompose="-decomposeParDict system/decomposeParDict"
+use_parallel="-parallel $use_decompose"
+
+## END USER EDITABLE PART ################################################################################
 
 # function to set parameters in caseDefinition...
 function setInputParam () 
@@ -43,42 +37,33 @@ function setInputParam ()
     echo $varVal
 }
 
-use_control="system/controlDict.DDES.init"
-use_decompose="-decomposeParDict system/decomposeParDict"
-use_parallel="-parallel $use_decompose"
-
-if $prepareMesh; then
+if $getMesh; then
+    cd basicSetup/constant
+    wget https://drive.google.com/uc\?export=download\&id\=18V6h0fjRzTxV8g6ZqSAzqGmopvfyoDRN\&confirm\=t\&uuid=7d2a21bb-0257-4538-bc8b-9d2556b59773\&at\=AHV7M3eU5WdaCruYj48EJRGr3DkK:1668419843949 -O polyMesh.tar.lzma
+    tar xvf polyMesh.tar.lzma
+    rm -rf polyMesh.tar.lzma
+fi
+if $devFlowField; then
+    cd basicSetup
+    # wget <link to compressed restart time directory>
+    # tar xvf compressed_restart.tar.lzma
+    # rm -rf compressed_restart.tar.lzma
+fi
+if $prepareCase; then
    time (
    echo "Prepare case folder ..."
-   rm -rf $runDir
-   cp -a $srcDir $runDir
-   cp -r Scripts/ $runDir
+   [ -d "${runDir}" ] && { echo "Directory $runDir already exists."; exit 1; }
+   cp -a basicSetup $runDir
+   cp -r scripts/ $runDir
    cd $runDir
    cp system/fvSchemes.pre system/fvSchemes
+   cp system/fvSolution.RANS system/fvSolution
    cp $use_control system/controlDict
    mkdir -p $logDir
-   cd constant
-   tar -xvzf polyMesh.WindsorBody_AutoCFD3_c1g1.tar.gz > ../$logDir/01_unpackMesh.log 2>&1 || exit 1
-   cd ..
    setInputParam nCores $nProcs
-   $NI decomposePar $use_decompose > $logDir/02_decomposePar.log 2>&1 || exit 1
+   decomposePar $use_decompose > $logDir/02_decomposePar.log 2>&1 || exit 1
    )
    echo
 fi
 
-if $devFlowField; then
-   time (
-   echo "Prepare case folder with developed flowfield ..."
-   rm -rf $runDir
-   cp -a $srcDir $runDir
-   cp -r Scripts/ $runDir
-   cd $runDir
-   cp system/fvSchemes.pre system/fvSchemes
-   cp $use_control system/controlDict
-   mkdir -p $logDir
-   setInputParam nCores $nProcs
-   $NI decomposePar $use_decompose -latestTime > $logDir/02_decomposePar.log 2>&1 || exit 1
-   )
-   echo
-fi
 echo "Finished."

@@ -80,3 +80,6 @@ doc/Doxygen/DTAGS
 
 # Ignore the test directory
 /tutorialsTest
+
+# Python cache
+**/__pycache__/

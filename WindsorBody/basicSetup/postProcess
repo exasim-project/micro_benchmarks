@@ -9,22 +9,8 @@
 # EXIT ON ERROR
 set -e
 
-### Set nice level if required
-#NI=" "
-NI="nice -n 19"
-
 ### directories
 logDir="logFiles"
-srcDir="occDrivAerRotMesh.orig"
-blockDir="occDrivAerRotMeshBlock"
-staticDir="occDrivAerRotMeshStatic"
-rotDir="occDrivAerRotMeshRot"
-mergeDir="occDrivAerRotMesh"
-
-### Load modules as required
-module load gnu/11
-module load openmpi/3
-module load OpenFOAM/v2206
 
 # function to read parameters from caseDefinition...
 function getInputParam () 
@@ -49,7 +35,7 @@ echo "Running ..."
 $parEx simpleFoam $use_parallel -postProcess -func yPlus -latestTime > $logDir/30_postProcessYPlus.log 2>&1 || exit 1
 $parEx simpleFoam $use_parallel -postProcess -func Q -latestTime > $logDir/31_postProcessQ.log 2>&1 || exit 1
 $parEx foamToEnsight $use_parallel -latestTime > $logDir/32_foamToEnsight.log 2>&1 || exit 1
-$NI python Scripts/python-files/plotScript.py . > $logDir/33_plotScript.log 2>&1 || exit 1
+python scripts/python-files/plotScript.py . > $logDir/33_plotScript.log 2>&1 || exit 1
 )
 echo
 
