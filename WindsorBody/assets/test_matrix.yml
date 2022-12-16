@@ -22,18 +22,18 @@ variation:
             - OpenFOAM
         options:
           Ginkgo:
-            verbose: 1,
+            verbose: 1
             forceHostBuffer: true
     variation:
       - type: ChangeNumberOfSubdomains
         parameters: 
           multiplier: ${{env.NGPUS}}
           method: simple
-          values: 1,
+          values: 1
         variant_of: [Ginkgo]
       - type: ChangeNumberOfSubdomains
         parameters: 
           multiplier: ${{env.CGPUS}}
           method: simple
-          values: 1,
+          values: 1
         variant_of: [OpenFOAM]
