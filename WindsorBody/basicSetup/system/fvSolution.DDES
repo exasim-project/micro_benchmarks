@@ -1,0 +1,94 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    "p|pcorr"
+    {
+        solver          GAMG;
+        tolerance       1e-99;
+        relTol          0.1;
+        smoother        GaussSeidel;
+        nCellsInCoarsestLevel 50;
+        minIter         1;
+    }
+
+    "pFinal|pcorrFinal"
+    {
+        $p;
+        relTol          0.01;
+
+        // Explicit specify solver for coarse-level correction to override
+        // solution tolerance
+        coarsestLevelCorr
+        {
+            // For limited residual reduction (relTol) PPCR behaves better
+            // than PCG (or PPCG)
+            solver          PCG;
+            preconditioner  DIC;
+            relTol          0.05;
+        }
+    }
+
+    "(rho.*|U.*|k.*|omega.*|nuTilda.*|h.*)"
+    {
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       1e-99;
+        relTol          0.001;
+        minIter         1;
+    }
+
+    Phi
+    {
+        $p;
+    }
+}
+
+potentialFlow
+{
+    nNonOrthogonalCorrectors   10;
+}
+
+PIMPLE
+{
+    nOuterCorrectors           10;      // max. no. iterations per time step
+    nCorrectors                1;
+    nNonOrthogonalCorrectors   0;
+    finalOnLastPimpleIterOnly  true;
+}
+
+relaxationFactors
+{
+    fields
+    {
+        "p.*"                0.4;
+    }
+    equations
+    {
+        "U.*"                0.7;
+        "(k.*|omega.*)"      0.7;
+        "(nuTilda.*)"        0.7;
+        "(h.*)"              0.7;
+    }
+}
+
+cache
+{
+    grad(U);
+}
+
+// ************************************************************************* //

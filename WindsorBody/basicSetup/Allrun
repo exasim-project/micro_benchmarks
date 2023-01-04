@@ -1,0 +1,127 @@
+#!/bin/bash -l
+### Script for running the WindsorBody with the c1g1-mesh from 
+### AutoCFD3-workshop
+### Upstream CFD, 2022
+
+#SBATCH --job-name "WP2_WindsorBody_Testing"
+#SBATCH --ntasks=128
+#SBATCH --time=1-00:00:00
+#SBATCH --partition=compute
+#SBATCH --mail-type=NONE
+#SBATCH --account=bmbf_2022_EXASIM
+
+
+### What to run
+## Beware that the RANS is meant to run in isolation. The initial DDES removes
+## all previous results.
+run_initial_RANS=false
+run_initial_DDES=true
+run_productive_DDES=true
+run_restart_initial_DDES=false
+
+### Solver
+solverLES="pimpleFoam"
+solverRANS="simpleFoam"
+
+### Used directories
+logDir="logFiles"
+
+# function to read parameters from caseDefinition...
+function getInputParam () 
+{
+    varVal=`grep -w ${1} system/include/caseDefinition | cut -d ";" -f 1 | grep -v '//'`
+    varVal=`echo ${varVal:${#1}}`
+    echo $varVal
+}
+
+# function to set parameters in caseDefinition...
+function setInputParam () 
+{
+    parameter=${1}
+    value=${2}
+    comment=`grep -w $parameter system/include/caseDefinition | cut -d ";" -f 2 |  sed 's/^\s*//'`
+    varVal=`printf "%-20s%-17s%s" "$parameter" "$value;" "$comment"`
+    sed -i "s:^${parameter} .*$:${varVal}:" system/include/caseDefinition
+    echo $varVal
+}
+
+# get input parameters
+nProcs=`getInputParam nCores`
+TIMESTAMP=$(date "+%Y-%m-%d_%H-%M-%S")
+
+#parEx="mpirun -np $nProcs"
+parEx="srun"
+
+module load gnu/11
+module load openmpi/3
+module load OpenFOAM/v2206
+
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions
+
+
+if $run_initial_RANS; then
+    echo "Running initial RANS ..."
+    mkdir $logDir
+    
+    # ---- initialise & run simulation
+    cp system/controlDict.RANS system/controlDict
+    cp system/fvSchemes.RANS system/fvSchemes
+    cp system/fvSolution.RANS system/fvSolution
+    cp constant/turbulenceProperties.RANS constant/turbulenceProperties
+
+    restore0Dir -processor
+    $parEx potentialFoam -initialiseUBCs -parallel > $logDir/21_potentialFoam.log 2>&1 || exit 1
+    $parEx applyBoundaryLayer -ybl "0.0450244" -parallel > $logDir/22_applyBoundaryLayer.log 2>&1 || exit 1
+
+    $parEx $solverRANS -parallel > $logDir/23_$solverRANS.$TIMESTAMP.log 2>&1 || exit 1
+    echo "... done!"
+fi
+
+if $run_initial_DDES; then
+    echo "Running initial DDES ..."
+    
+    # ---- initialise & run simulation
+    foamListTimes -processor -rm 
+    cp system/controlDict.DDES.init system/controlDict
+    cp system/fvSchemes.DDES system/fvSchemes
+    cp system/fvSolution.DDES system/fvSolution
+    cp constant/turbulenceProperties.LES constant/turbulenceProperties
+
+    restore0Dir -processor
+    $parEx potentialFoam -initialiseUBCs -parallel > $logDir/21_potentialFoam.log 2>&1 || exit 1
+    $parEx applyBoundaryLayer -ybl "0.0450244" -parallel > $logDir/22_applyBoundaryLayer.log 2>&1 || exit 1
+
+    $parEx $solverLES -parallel > $logDir/23_$solverLES.$TIMESTAMP.log 2>&1 || exit 1
+    echo "... done!"
+fi
+
+if $run_restart_initial_DDES; then
+    echo "Restart initial DDES ..."
+    
+    # ---- initialise & run simulation
+    cp system/controlDict.DDES.init system/controlDict
+    cp system/fvSchemes.DDES system/fvSchemes
+    cp system/fvSolution.DDES system/fvSolution
+    cp constant/turbulenceProperties.LES constant/turbulenceProperties
+
+    $parEx $solverLES -parallel > $logDir/23_$solverLES.$TIMESTAMP.log 2>&1 || exit 1
+
+    echo "... done!"
+fi
+
+if $run_productive_DDES; then
+    echo "Running productive DDES ..."
+    
+    # ---- initialise & run simulation
+    cp system/controlDict.DDES.avg system/controlDict
+    cp system/fvSchemes.DDES system/fvSchemes
+    cp system/fvSolution.DDES system/fvSolution
+    cp constant/turbulenceProperties.LES constant/turbulenceProperties
+
+    $parEx $solverLES -parallel > $logDir/24_$solverLES.$TIMESTAMP.log 2>&1 || exit 1
+
+    echo "... done!"
+fi
+
+
+# ----------------------------------------------------------------- end-of-file                                                                
