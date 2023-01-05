@@ -42,12 +42,14 @@ if $getMesh; then
     wget https://drive.google.com/uc\?export=download\&id\=18V6h0fjRzTxV8g6ZqSAzqGmopvfyoDRN\&confirm\=t\&uuid=7d2a21bb-0257-4538-bc8b-9d2556b59773\&at\=AHV7M3eU5WdaCruYj48EJRGr3DkK:1668419843949 -O polyMesh.tar.lzma
     tar xvf polyMesh.tar.lzma
     rm -rf polyMesh.tar.lzma
+    cd ../../
 fi
 if $devFlowField; then
     cd basicSetup
     # wget <link to compressed restart time directory>
     # tar xvf compressed_restart.tar.lzma
     # rm -rf compressed_restart.tar.lzma
+    cd ..
 fi
 if $prepareCase; then
    time (
@@ -63,6 +65,7 @@ if $prepareCase; then
    setInputParam nCores $nProcs
    decomposePar $use_decompose > $logDir/02_decomposePar.log 2>&1 || exit 1
    )
+   cd ..
    echo
 fi
 

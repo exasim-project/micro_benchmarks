@@ -1,19 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Description:
+------------
+This is a python file contains a collection of little functions to handle OpenFOAM data,
+write data in a consistent format and read case parameters from the custom caseDefinition file
+in post processing scripts.
 
+Functionality:
+--------------
+This file can be loaded as a python module in other python post processing scripts.
+
+Script developer : Louis Fliessbach (louis.fliessbach@upstream-cfd.com)
+
+Last updated : 04.01.2023
+"""
 import os
 import re
 import numpy as np
 import yaml
 
 #%% I/O functions
-def read_data(pathToInFile,fileNameIn):
-    with open(os.path.join(pathToInFile,fileNameIn),'r') as fileIn:
+def read_data(inputFile):
+    with open(inputFile,'r') as fileIn:
         rawContent = fileIn.readlines()
     return rawContent
 
-def load_data(pathToInFile,Delimiter,Unpack=False):
-    return np.loadtxt(pathToInFile,delimiter=Delimiter,unpack=Unpack)
+def load_data(inputFile,Delimiter,Unpack=False):
+    try:
+        data        = np.loadtxt(inputFile,delimiter=Delimiter,unpack=Unpack)
+    except ValueError:
+        rawContent  = read_data(inputFile)
+        data        = np.loadtxt(re.sub('\)','',re.sub('\(','',stripCommentedLines(''.join(rawContent),'#'))).split('\n'))
+    return data
 
 def write_data(dataSet,Header,pathToOutFile,fileNameOut,delimiter=",",fmt="%30.16e"):
     np.savetxt(os.path.join(pathToOutFile,fileNameOut), dataSet, delimiter=delimiter, header=Header, fmt=fmt)
@@ -25,15 +44,10 @@ def find_line_of_string(strList, subStr):
     lineContent     = [strList[iLine] for iLine in idxLines]
     return idxLines, len(idxLines), lineContent
 
-def find_header(pathToInFile):
-    with open(pathToInFile,'r') as fileIn:
-        rawContent = fileIn.readlines()
+def find_header(inputFile):
+    rawContent = read_data(inputFile)
     headerLineIdx, nHeaderLines, headerContent = find_line_of_string(rawContent,'#')
     return headerContent, nHeaderLines
-
-def get_value_from_header(headerContent,keyword):
-    _, _, lineContent = find_line_of_string(headerContent,keyword)
-    return np.array([float(re.findall(r"-?\ *[0-9]+\.?[0-9]*(?:[Ee]\ *[-+]?\ *[0-9]+)?", iLineContent)[0]) for iLineContent in lineContent])
 
 def stripCommentedLines(string,commentMarker):
     return re.sub(r'(?m)^ *'+commentMarker+'.*\n?', '', string)
@@ -45,8 +59,8 @@ def remove_comments(line, commentMarker):
             line = line[:i]
     return line.strip()
 
-def get_caseDefinition(pathToInFile,fileNameIn):
-    rawContent      = read_data(pathToInFile,fileNameIn)
+def get_caseDefinition(inputFile):
+    rawContent      = read_data(inputFile)
     stripContent    = []
     caseDict        = {}
     # remove all Comments from list of strings
