@@ -11,20 +11,31 @@ set -e
 # blockmesh and feature extraction
 getMesh=false                       # Download mesh files 
 devFlowField=false                  # Download restart time to setup case with a developed DDES-field
-prepareCase=true                    # Setup case in new run directory
+prepareCase=false                   # Setup case in new run directory
+duplicateCase=true                  # copy/duplicate case domain nCaseCopies times for weak scaling benchmarking
+nCaseCopies=4
 
 ### directories
 logDir="logFiles"
-runDir="run_1"
+runDir="run_3"
+timeDir="0.3"
 
 ### number procs for decomposition
 nProcs=16
 
-use_control="system/controlDict.DDES.init"
+use_control="system/controlDict.DDES.avg"
 use_decompose="-decomposeParDict system/decomposeParDict"
 use_parallel="-parallel $use_decompose"
 
 ## END USER EDITABLE PART ################################################################################
+
+# function to read parameters from caseDefinition...
+function getInputParam () 
+{
+    varVal=`grep -w ${1} system/include/caseDefinition | cut -d ";" -f 1 | grep -v '//'`
+    varVal=`echo ${varVal:${#1}}`
+    echo $varVal
+}
 
 # function to set parameters in caseDefinition...
 function setInputParam () 
@@ -37,6 +48,8 @@ function setInputParam ()
     echo $varVal
 }
 
+. loadModules.sh
+
 if $getMesh; then
     cd basicSetup/constant
     wget https://drive.google.com/uc\?export=download\&id\=18V6h0fjRzTxV8g6ZqSAzqGmopvfyoDRN\&confirm\=t\&uuid=7d2a21bb-0257-4538-bc8b-9d2556b59773\&at\=AHV7M3eU5WdaCruYj48EJRGr3DkK:1668419843949 -O polyMesh.tar.lzma
@@ -46,27 +59,35 @@ if $getMesh; then
 fi
 if $devFlowField; then
     cd basicSetup
-    # wget <link to compressed restart time directory>
-    # tar xvf compressed_restart.tar.lzma
-    # rm -rf compressed_restart.tar.lzma
+    wget https://upstreamcfdcom-my.sharepoint.com/:u:/g/personal/louis_fliessbach_upstream-cfd_com/ERD7WKb-mspLu8BwQHvHhpgB9Cr6_rd7HMa0hhEKd2hZ5A?download=1 -O windsorBodyDDESFlowField_t$timeDir.tar.gz
+    tar xvzf windsorBodyDDESFlowField_t$timeDir.tar.gz
+    rm -rf windsorBodyDDESFlowField_t$timeDir.tar.gz
     cd ..
 fi
+if $duplicateCase; then
+    time (
+    echo "Prepare duplicated case folder ..."
+    [ -d "${runDir}" ] && { echo "Directory $runDir already exists."; exit 1; }
+    . "duplicateDomain.sh"              # call bash script to set up duplicated case domain
+    )
+    echo
+fi
 if $prepareCase; then
-   time (
-   echo "Prepare case folder ..."
-   [ -d "${runDir}" ] && { echo "Directory $runDir already exists."; exit 1; }
-   cp -a basicSetup $runDir
-   cp -r scripts/ $runDir
-   cd $runDir
-   cp system/fvSchemes.pre system/fvSchemes
-   cp system/fvSolution.RANS system/fvSolution
-   cp $use_control system/controlDict
-   mkdir -p $logDir
-   setInputParam nCores $nProcs
-   decomposePar $use_decompose > $logDir/02_decomposePar.log 2>&1 || exit 1
-   )
-   cd ..
-   echo
+    time (
+    echo "Prepare case folder ..."
+    [ -d "${runDir}" ] && { echo "Directory $runDir already exists."; exit 1; }
+    cp -a basicSetup $runDir
+    ln -s scripts/ $runDir/scripts/
+    cd $runDir
+    cp system/fvSchemes.pre system/fvSchemes
+    cp system/fvSolution.RANS system/fvSolution
+    cp $use_control system/controlDict
+    mkdir -p $logDir
+    setInputParam nCores $nProcs
+    decomposePar $use_decompose > $logDir/02_decomposePar.log 2>&1 || exit 1
+    cd ..
+    )
+    echo
 fi
 
 echo "Finished."
