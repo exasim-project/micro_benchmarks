@@ -11,14 +11,11 @@ cp system/fvSolution.RANS system/fvSolution
 cp $use_control system/controlDict
 mkdir -p $logDir
 # Rename patch of future internal face
-#createPatch -overwrite -dict ./system/createPatchDict.renameBase > $logDir/03_createPatch.renameBase.log 2>&1 || exit 1
 # change patch names in boundaryFields of constant directory
 sed -i "s/\bCFDWT_Right\b/CFDWT_Right_intern/g" ./constant/polyMesh/boundary
 cp -a $logDir/ ../$runDir/
 # change patch names in boundaryFields of time directory
 find ./$timeDir/* -type f -exec sed -i "s/\bCFDWT_Right\b/CFDWT_Right_intern/g" {} \;
-# # get the number of cells in original mesh
-# nCellsOrig=`grep -w -a nCells constant/polyMesh/owner | cut -d ":" -f 3 | cut -d " " -f 1`
 cd ..
 
 for ((iCopy=2; iCopy<=$nCaseCopies; iCopy++))
@@ -33,10 +30,7 @@ do
     # translate Mesh and flowfield in y-direction
     transVec="(0 $( bc -l <<<"($iCopy-1)*1.92" ) 0)"
     transformPoints -rotateFields -translate "$transVec" > $logDir/04_transformpoints_$(($iCopy-1)).log 2>&1 || exit 1
-    # # rename all patches, except the right boundary, to have unique patch names for later apllication of mapFieldsPar utility
-    # # sed -i "s/^nDomainCopies.*/nDomainCopies    $iCopy;/" system/createPatchDict.renameAddition
-    # sed -i "s/_2;/_$iCopy;/g" system/createPatchDict.renameAddition
-    # createPatch -overwrite -dict ./system/createPatchDict.renameAddition > $logDir/05_createPatch.renameAddition_$(($iCopy-1)).log 2>&1 || exit 1
+    # rename all patches, except the right boundary, to have unique patch names for later apllication of mapFieldsPar utility
     # change patch names in boundaryFields of constant directory
     sed -i "s/\bCFDWT_Left\b/CFDWT_Left_intern/g" ./constant/polyMesh/boundary
     sed -i "s/\bCFDWT_Roof\b/CFDWT_Roof_$iCopy/g" ./constant/polyMesh/boundary
@@ -73,13 +67,8 @@ for ((iCopy=2; iCopy<=$nCaseCopies; iCopy++))
 do
     iDuplicateDir="tmpDuplicateDir$(($iCopy-1))"
     # # Rename patch of future internal face
-    # createPatch -overwrite -dict ./system/createPatchDict.renameBase >> $logDir/06_createPatch.renameBase.log 2>&1 || exit 1
     # change patch names in boundaryFields of constant directory
     sed -i "s/\bCFDWT_Right\b/CFDWT_Right_intern/g" ./constant/polyMesh/boundary
-    # # change patch names in boundaryFields of time directory
-    # find ./$timeDir/* -type f -exec sed -i "s/\bCFDWT_Right\b/CFDWT_Right_intern/g" {} \;
-    # # change number of cells in fields in time directory
-    # find ./$timeDir/* -type f -exec sed -i "s/$nCellsOrig/$(($nCellsOrig*$nCaseCopies))/g" {} \;
     # Merge "original" mesh with translated mesh
     mergeMeshes -overwrite . ../$iDuplicateDir/ >> $logDir/07_mergeMeshes.log 2>&1 || exit 1
     # stitch the merged mesh on internal patch faces
@@ -99,8 +88,6 @@ cp omega omega_0
 cp nut nut_0
 cp nuTilda nuTilda_0
 cd ..
-# # change patch names in boundaryFields of time directory
-# find ./$timeDir/* -type f -exec sed -i "s/\bCFDWT_Right\b/CFDWT_Right_intern/g" {} \;
 
 # --- Map fields
 for ((iCopy=1; iCopy<=$nCaseCopies; iCopy++))
@@ -125,6 +112,6 @@ done
 rm $timeDir/*.unmapped
 
 # setInputParam nCores $nProcs
-# decomposePar $use_decompose > $logDir/02_decomposePar.log 2>&1 || exit 1
+decomposePar $use_decompose > $logDir/02_decomposePar.log 2>&1 || exit 1
 cd ..
 rm -r tmpDuplicateDir*
