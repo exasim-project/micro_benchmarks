@@ -57,7 +57,7 @@ variation:
               - simple:
                   numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
             parent:
-              solver: GKOCG
+              executor: ${{env.GINKGO_EXECUTOR}}
           - operation: decomposePar
             schema: "decomposition_CPU/{simple/numberSubDomains}"
             values:
@@ -68,4 +68,4 @@ variation:
               - simple:
                   numberSubDomains: ${{ 4 * ${{env.NCPUS}} }}
             parent:
-              solver: PCG
+              executor: CPU
