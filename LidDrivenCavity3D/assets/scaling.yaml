@@ -7,7 +7,7 @@ case:
       - shell: cp system/fvSolution.fixedNORM system/fvSolution
       - controlDict:
            writeFormat: binary
-           libs: "(libOGL.so)"
+           libs: ["libOGL.so"]
       - fvSolution:
             set: solvers/p
             clear: True

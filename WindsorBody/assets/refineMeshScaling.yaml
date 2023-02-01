@@ -6,7 +6,7 @@ case:
       - shell: getMesh.sh
       - controlDict:
            writeFormat: binary
-           libs: "(libOGL.so)"
+           libs: ["libOGL.so"}
            endTime: 1.0
 variation:
   - operation: refineMesh
