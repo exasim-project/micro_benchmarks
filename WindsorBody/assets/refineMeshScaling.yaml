@@ -29,22 +29,22 @@ variation:
           - operation: decomposePar
             schema: "decomposition_GPU/{simple/numberSubDomains}"
             values:
-              - simple:
-                  numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
-              - simple:
-                  numberSubDomains: ${{ 2 * ${{env.NGPUS}} }}
-              - simple:
-                  numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 2 * ${{env.NGPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
             parent:
               executor: ${{env.GINKGO_EXECUTOR}}
           - operation: decomposePar
             schema: "decomposition_CPU/{simple/numberSubDomains}"
             values:
-              - simple:
-                  numberSubDomains: ${{ 1 * ${{env.NCPUS}} }}
-              - simple:
-                  numberSubDomains: ${{ 2 * ${{env.NCPUS}} }}
-              - simple:
-                  numberSubDomains: ${{ 4 * ${{env.NCPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 1 * ${{env.NCPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 2 * ${{env.NCPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 4 * ${{env.NCPUS}} }}
             parent:
               executor: CPU

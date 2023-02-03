@@ -22,18 +22,10 @@ variation:
         controlDict:
           deltaT: 0.001
           endTime: 0.02
-      - modifyBlock: "(100 100 100)->(200 200 200)"
+      - modifyBlock: "(100 100 100)->(50 50 50)"
         controlDict:
           deltaT: 0.0005
           endTime: 0.01
-      - modifyBlock: "(100 100 100)->(300 300 300)"
-        controlDict:
-          deltaT: 0.00033
-          endTime: 0.0066
-      - modifyBlock: "(100 100 100)->(400 400 400)"
-        controlDict:
-          deltaT: 0.00025
-          endTime: 0.005
     variation:
       - operation: fvSolution
         schema: "linear_solver/{solver}{preconditioner}{executor}"
@@ -50,22 +42,22 @@ variation:
           - operation: decomposePar
             schema: "decomposition_GPU/{simple/numberSubDomains}"
             values:
-              - simple:
-                  numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
-              - simple:
-                  numberSubDomains: ${{ 2 * ${{env.NGPUS}} }}
-              - simple:
-                  numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 2 * ${{env.NGPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
             parent:
               executor: ${{env.GINKGO_EXECUTOR}}
           - operation: decomposePar
             schema: "decomposition_CPU/{simple/numberSubDomains}"
             values:
-              - simple:
-                  numberSubDomains: ${{ 1 * ${{env.NCPUS}} }}
-              - simple:
-                  numberSubDomains: ${{ 2 * ${{env.NCPUS}} }}
-              - simple:
-                  numberSubDomains: ${{ 4 * ${{env.NCPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 2 * ${{env.NGPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
             parent:
               executor: CPU
