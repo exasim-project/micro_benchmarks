@@ -33,6 +33,7 @@ variation:
           - set: solvers/p
             preconditioner: none
             solver: GKOCG
+            forceHostBuffer: True
             executor: ${{env.GINKGO_EXECUTOR}}
           - set: solvers/p
             solver: PCG
@@ -40,7 +41,7 @@ variation:
             executor: CPU
         variation:
           - operation: decomposePar
-            schema: "decomposition_GPU/{simple/numberSubDomains}"
+            schema: "decomposition_GPU/{method}_{numberSubDomains}"
             values:
               - method: simple
                 numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
@@ -51,7 +52,7 @@ variation:
             parent:
               executor: ${{env.GINKGO_EXECUTOR}}
           - operation: decomposePar
-            schema: "decomposition_CPU/{simple/numberSubDomains}"
+            schema: "decomposition_CPU/{method}_{numberSubDomains}"
             values:
               - method: simple
                 numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
