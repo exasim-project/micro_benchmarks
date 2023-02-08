@@ -2,6 +2,9 @@ from Owls.LogFileParser import LogFile, LogKey
 from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
+import pandas as pd
+from collections import defaultdict
+from obr import signac_operations
 
 
 def call(jobs):
@@ -33,7 +36,9 @@ def call(jobs):
 
     logKeys += [pIter, UIter, pTiming]
 
-    d_tmp = {}
+    cache = signac_operations.JobCache(jobs)
+    records = []
+    d_tmp = defaultdict(list)
 
     for j in jobs:
         solver = j.doc["obr"].get("solver")
@@ -51,10 +56,17 @@ def call(jobs):
         df = LogFile(logKeys).parse_to_df(log_path)
 
         # skip first row / first time step
-        d_tmp.update({j.sp["modifyBlock"]: df.iloc[1:].mean()["time_solve"]})
+        solver = j.sp["solver"]
+        d_tmp[solver].append((cache.search_parent(j, "nCells"), [df.iloc[1:].mean()["time_solve"]]))
 
-    # random plot for now
     fig, ax = plt.subplots(nrows=1, ncols=1)
-    ax.plot([0, 1, 2], [10, 20, 3])
+    for solver, data in d_tmp.items():
+         nCells, time = zip(*data)
+         line, = ax.plot(nCells, time)
+         line.set_label(solver)
+
+    ax.legend()
+    ax.set_xlabel("Number of cells [-]")
+    ax.set_ylabel("Time [ms]")
     fig.savefig("assets/image.png")
     plt.close(fig)
