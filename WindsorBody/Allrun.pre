@@ -13,12 +13,11 @@ getMesh=false                       # Download mesh files
 devFlowField=false                  # Download restart time to setup case with a developed DDES-field
 prepareCase=false                   # Setup case in new run directory
 duplicateCase=true                  # copy/duplicate case domain nCaseCopies times for weak scaling benchmarking
-nCaseCopies=4
+nCaseCopies=3
 
 ### directories
 logDir="logFiles"
-runDir="run_3"
-timeDir="0.3"
+runDir="run_2"
 
 ### number procs for decomposition
 nProcs=16
@@ -52,13 +51,15 @@ function setInputParam ()
 
 if $getMesh; then
     cd basicSetup/constant
-    wget https://drive.google.com/uc\?export=download\&id\=18V6h0fjRzTxV8g6ZqSAzqGmopvfyoDRN\&confirm\=t\&uuid=7d2a21bb-0257-4538-bc8b-9d2556b59773\&at\=AHV7M3eU5WdaCruYj48EJRGr3DkK:1668419843949 -O polyMesh.tar.lzma
-    tar xvf polyMesh.tar.lzma
-    rm -rf polyMesh.tar.lzma
+    # Download and unpack grid
+    wget https://upstreamcfdcom-my.sharepoint.com/:u:/g/personal/louis_fliessbach_upstream-cfd_com/EY_GPJhIOrZNk0qZMbUlS14B46rY1aIIFrccK9qsF41LGg?download=1 -O polyMesh.tar.gz
+    tar xvzf polyMesh.tar.gz
+    rm -rf polyMesh.tar.gz
     cd ../../
 fi
 if $devFlowField; then
     cd basicSetup
+    # Download and unpack flowfield
     wget https://upstreamcfdcom-my.sharepoint.com/:u:/g/personal/louis_fliessbach_upstream-cfd_com/ERD7WKb-mspLu8BwQHvHhpgB9Cr6_rd7HMa0hhEKd2hZ5A?download=1 -O windsorBodyDDESFlowField_t$timeDir.tar.gz
     tar xvzf windsorBodyDDESFlowField_t$timeDir.tar.gz
     rm -rf windsorBodyDDESFlowField_t$timeDir.tar.gz
@@ -68,7 +69,16 @@ if $duplicateCase; then
     time (
     echo "Prepare duplicated case folder ..."
     [ -d "${runDir}" ] && { echo "Directory $runDir already exists."; exit 1; }
-    . "duplicateDomain.sh"              # call bash script to set up duplicated case domain
+
+    # --- prepare case folders
+    # Copy basic setup
+    cp -a basicSetup $runDir
+    cd $runDir
+    # call bash script to set up duplicated case domain
+    . ../assets/scripts/concatenateDomain.sh -n $nCaseCopies -f
+    setInputParam nCores $nProcs
+    decomposePar $use_decompose > $logDir/07_decomposePar.log 2>&1 || exit 1
+    cd ..
     )
     echo
 fi
@@ -84,7 +94,7 @@ if $prepareCase; then
     cp $use_control system/controlDict
     mkdir -p $logDir
     setInputParam nCores $nProcs
-    decomposePar $use_decompose > $logDir/02_decomposePar.log 2>&1 || exit 1
+    decomposePar $use_decompose > $logDir/06_decomposePar.log 2>&1 || exit 1
     cd ..
     )
     echo
