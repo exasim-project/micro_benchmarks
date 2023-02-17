@@ -3,16 +3,15 @@ case:
     solver: pimpleFoam
     origin: ${{yaml.location}}/../basicSetup 
     post_build:
-      - shell: getMesh.sh
+      - shell: ${{yaml.location}}/scripts/getMesh.sh
       - controlDict:
            writeFormat: binary
-           libs: ["libOGL.so"}
+           libs: ["libOGL.so"]
            endTime: 1.0
 variation:
-  - operation: refineMesh
-    key: value
-    values:
-      [0,1,2,3]
+  - operation: shell
+    key: ${{yaml.location}}/scripts/concatenateDomain.sh
+    values: [0, 1, 2]
     variation:
       - operation: fvSolution
         schema: "linear_solver/{solver}{preconditioner}{executor}"
@@ -27,7 +26,7 @@ variation:
             executor: CPU
         variation:
           - operation: decomposePar
-            schema: "decomposition_GPU/{simple/numberSubDomains}"
+            schema: "decomposition_GPU/{method}_{numberSubDomains}"
             values:
               - method: simple
                 numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
@@ -38,7 +37,7 @@ variation:
             parent:
               executor: ${{env.GINKGO_EXECUTOR}}
           - operation: decomposePar
-            schema: "decomposition_CPU/{simple/numberSubDomains}"
+            schema: "decomposition_CPU/{method}_{numberSubDomains}"
             values:
               - method: simple
                 numberSubDomains: ${{ 1 * ${{env.NCPUS}} }}
