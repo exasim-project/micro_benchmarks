@@ -3,8 +3,8 @@
 """
 Description:
 ------------
-This is a python file contains a collection of little functions to handle OpenFOAM data,
-write data in a consistent format and read case parameters from the custom caseDefinition file
+This is a python file that contains a collection of little functions to handle OpenFOAM data,
+writes data in a consistent format and reads case parameters from the custom caseDefinition file
 in post processing scripts.
 
 Functionality:

@@ -3,7 +3,7 @@
 """
 Description:
 ------------
-This is a python for basic post processing of the windsor body case.
+This is a python script for basic post processing of the windsor body case.
 
 Functionality:
 --------------
@@ -29,7 +29,10 @@ import IOFoamLib as io
 if len(sys.argv) > 1:
     runDir          = os.path.abspath(sys.argv[1])
 else:
-    runDir          = '../../run_1'
+#    runDir          = '../../run_1'
+    runDir          = '../../Testing/WindsorBody_OF-v2206_incomp_AutoCFD3g1_test04-DDES'
+#    runDir          = '../../WindsorBody-v230104/run_01_RANS-Test'
+#    runDir          = '../../Testing/WindsorBody_OF-v2206_incomp_AutoCFD3g1_test05-RANS'
 
 baseDir = '../../'
 
@@ -57,8 +60,8 @@ if not os.path.exists(imageDirPath):
 figSize         = [7.5,5]    # in cm 
 cm2inch         = lambda cm : cm/2.54
 DPI             = 300
-plt.rcParams['font.size']       = '6'
-plt.rcParams['axes.labelsize']  = '8'
+plt.rcParams['font.size'] = '6'
+plt.rcParams['axes.labelsize'] = '8'
 plt.rcParams['xtick.labelsize'] = '6'
 plt.rcParams['ytick.labelsize'] = '6'
 
@@ -105,7 +108,6 @@ Cs_ref          = 0.1509
 Cmp_ref         = -0.0259
 Cmy_ref         = -0.0322       # sign is changed too match definition of positive yaw angle according to right hand rule
 Cmr_ref         = -0.0424       # sign is changed too match definition of positive roll according to right hand rule
-
 # load transient data from raw OF files
 fileIn          = glob.glob(os.path.join(runDir,rawDataDir,'forceCoeffsAll','*','coefficient.dat'))
 data            = io.mergeOFTimeSeries(fileIn)
@@ -188,7 +190,7 @@ ax.plot([-1e6,1e6],[Cmr_ref,Cmr_ref],':',color='grey',label='Exp. Varney et al.'
 ax.set_xlabel('time in s')
 ax.set_ylabel(r'$C_\mathrm{m_{Roll}}$')
 ax.set_xlim([np.min(tFull),np.max(tFull)])
-ax.set_ylim([-0.1,0.1])
+ax.set_ylim([-0.05,0.0])
 ax.legend()
 outFile         = os.path.join(imageDirPath,'Cmroll_t.png')
 fig.savefig(outFile,dpi=DPI, facecolor='w', edgecolor='w', orientation='portrait', bbox_inches='tight', pad_inches=0.1)
@@ -203,7 +205,7 @@ ax.plot([-1e6,1e6],[Cmy_ref,Cmy_ref],':',color='grey',label='Exp. Varney et al.'
 ax.set_xlabel('time in s')
 ax.set_ylabel(r'$C_\mathrm{m_{Yaw}}$')
 ax.set_xlim([np.min(tFull),np.max(tFull)])
-ax.set_ylim([-0.1,0.1])
+ax.set_ylim([-0.075,-0.025])
 ax.legend()
 outFile         = os.path.join(imageDirPath,'Cmyaw_t.png')
 fig.savefig(outFile,dpi=DPI, facecolor='w', edgecolor='w', orientation='portrait', bbox_inches='tight', pad_inches=0.1)
