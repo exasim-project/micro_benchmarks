@@ -1,7 +1,7 @@
 case:
     type: CaseOnDisk
     solver: pimpleFoam
-    origin: ${{yaml.location}}/../basicSetup 
+    origin: basicSetup 
     post_build:
       - shell: ${{yaml.location}}/scripts/getMesh.sh
       - controlDict:
@@ -19,6 +19,8 @@ variation:
           - set: solvers/p
             preconditioner: none
             solver: GKOCG
+            forceHostBuffer: true
+            verbose: 1
             executor: ${{env.GINKGO_EXECUTOR}}
           - set: solvers/p
             solver: PCG

@@ -12,7 +12,7 @@ def call(jobs):
     col_iter = ["init", "final", "iter"]
     col_time = ["time"]
     p_steps = ["_p", "_pFinal"]
-    U_components = ["_x", "_y", "_z"]
+    U_components = ["_Ux", "_Uy", "_Uz"]
 
     pIter = LogKey("Solving for p", col_iter, p_steps)
     UIter = LogKey("Solving for U", col_iter, U_components)
@@ -54,6 +54,7 @@ def call(jobs):
 
         # parse logs for given keys
         df = LogFile(logKeys).parse_to_df(log_path)
+        print(df)
 
         # skip first row / first time step
         solver = j.sp["solver"]
