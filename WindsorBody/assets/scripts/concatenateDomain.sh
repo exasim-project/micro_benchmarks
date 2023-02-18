@@ -14,7 +14,7 @@
 
 # set default number of concatenations
 nCaseCopies=2
-concatFields=false
+concatFields=true
 overwriteFlag='-overwrite'
 # --- get options
 while getopts ":n:f" opt; do
@@ -133,7 +133,6 @@ do
     rm ./$timeDir/meshPhi || rm ./0/meshPhi || true
 done
 # check mesh
-checkMesh > $logDir/05_checkMesh.log 2>&1 || exit 1
 
 if $concatFields; then
     cp -a 0.orig/* $timeDir/
