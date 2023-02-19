@@ -6,25 +6,29 @@ case:
       - shell: ${{yaml.location}}/scripts/getMesh.sh
       - controlDict:
            writeFormat: binary
-           libs: ["libOGL.so"]
-           endTime: 1.0
+           libs: ("libOGL.so")
+           endTime: 100.0
 variation:
   - operation: shell
     key: ${{yaml.location}}/scripts/concatenateDomain.sh
-    values: [0, 1, 2]
+    values: [-n0, -n1, -n2]
+    post_build:
+      - shell: rm -rf 0
+      - shell: mv 0.orig 0/
     variation:
       - operation: fvSolution
         schema: "linear_solver/{solver}{preconditioner}{executor}"
         values:
           - set: solvers/p
-            preconditioner: none
+            preconditioner: BJ
             solver: GKOCG
-            forceHostBuffer: true
+            forceHostBuffer: "true"
+            maxIter: 2000
             verbose: 1
             executor: ${{env.GINKGO_EXECUTOR}}
           - set: solvers/p
             solver: PCG
-            preconditioner: none
+            preconditioner: DIC
             executor: CPU
         variation:
           - operation: decomposePar

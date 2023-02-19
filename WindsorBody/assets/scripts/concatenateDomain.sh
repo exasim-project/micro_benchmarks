@@ -63,8 +63,6 @@ echo
 logDir="logFiles"
 mkdir -p $logDir
 cp system/fvSchemes.pre system/fvSchemes
-cp system/fvSolution.RANS system/fvSolution
-cp system/controlDict.RANS system/controlDict
 
 cd ..
 # --- create temporary directories with translated domain
