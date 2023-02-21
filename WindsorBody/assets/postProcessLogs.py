@@ -6,7 +6,6 @@ import pandas as pd
 from collections import defaultdict
 from obr import signac_operations
 
-
 def call(jobs):
     col_iter = ["init", "final", "iter"]
     col_time = ["time"]
@@ -33,19 +32,21 @@ def call(jobs):
     ]
 
     # Solver annotations
-    SolverAnnotations = [
-        LogKey(search, col_time, append_search_to_col=True)
-        for search in [
-            "MatrixAssemblyU:",
-            "MomemtumPredictor:",
-            "SolveP:",
+    SolverAnnotationKeys = [
+            "MatrixAssemblyU",
+            "MomentumPredictor",
+            "SolveP",
             "MatrixAssemblyPI:",
             "MatrixAssemblyPII:",
-            "TimeStep:",
+            "TimeStep",
         ]
+
+    SolverAnnotations = [
+        LogKey(search, col_time, append_search_to_col=True)
+        for search in  SolverAnnotationKeys
     ]
 
-    logKeys = [pIter, UIter, pTiming]
+    logKeys = [pIter, UIter]
     logKeys += SolverAnnotations
     logKeys += OGLAnnotations
 
@@ -53,23 +54,34 @@ def call(jobs):
     records = []
     d_tmp = defaultdict(list)
 
-    for j in jobs:
-        solver = j.doc["obr"].get("solver")
+    for job in jobs:
+        solver = job.doc["obr"].get("solver")
 
         # skip jobs without a solver
         if not solver:
             continue
 
-        case_path = Path(j.path) / "case"
+        case_path = Path(job.path) / "case"
 
         # get latest log
-        log_path = case_path / j.doc["obr"][solver][-1]["log"]
+        log_path = case_path / job.doc["obr"][solver][-1]["log"]
 
         # parse logs for given keys
         df = LogFile(logKeys).parse_to_df(log_path)
-        solver = j.sp["solver"]
+        solver = job.sp["solver"]
 
-        # write to job.doc
-        job.doc["time_SolveP"] = df.iloc[1:].mean()["time_solve"]
-        job.doc["time_MomentumPredictor"] = df.iloc[1:].mean()["time_solve"]
-        job.doc["time_TimeStep"] = df.iloc[1:].mean()["time_solve"]
+        # write average times to job.doc
+        for k in SolverAnnotationKeys:
+            try:
+                job.doc["obr"][k] = df.iloc[1:].mean()["time_" + k]
+            except:
+                pass
+
+        # write average times step ratio to job.doc
+        for k in SolverAnnotationKeys:
+            try:
+                job.doc["obr"][k + "_rel"] = df.iloc[1:].mean()["time_" + k] / df.iloc[1:].mean()["time_TimeStep"]
+            except:
+                pass
+
+        job.doc["obr"]["nCells"] = cache.search_parent(job, "nCells")

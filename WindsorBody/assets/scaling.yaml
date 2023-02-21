@@ -7,11 +7,11 @@ case:
       - controlDict:
            writeFormat: binary
            libs: ("libOGL.so")
-           endTime: 100.0
+           endTime: 50.0
 variation:
   - operation: shell
     key: ${{yaml.location}}/scripts/concatenateDomain.sh
-    values: [-n0, -n1, -n2]
+    values: [-n1, -n2, -n3]
     post_build:
       - shell: rm -rf 0
       - shell: mv 0.orig 0/
@@ -19,27 +19,31 @@ variation:
       - operation: fvSolution
         schema: "linear_solver/{solver}{preconditioner}{executor}"
         values:
-          - set: solvers/p
+          - set: solvers/U
             preconditioner: BJ
-            solver: GKOCG
+            solver: GKOBiCGStab
             forceHostBuffer: "true"
             maxIter: 2000
             verbose: 1
+            ranksPerGPU: ${{env.NCPUS_PER_GPU}}
             executor: ${{env.GINKGO_EXECUTOR}}
           - set: solvers/p
-            solver: PCG
-            preconditioner: DIC
+            solver: GAMG
+            smoother: GaussSeidel
+            preconditioner: GaussSeidel
             executor: CPU
         variation:
           - operation: decomposePar
             schema: "decomposition_GPU/{method}_{numberSubDomains}"
             values:
               - method: simple
-                numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 2 * ${{env.NGPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
+                numberSubDomains: ${{ 1 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
+              - method: simple                                           
+                numberSubDomains: ${{ 2 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
+              - method: simple                                           
+                numberSubDomains: ${{ 4 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
+              - method: simple                                           
+                numberSubDomains: ${{ 8 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
             parent:
               executor: ${{env.GINKGO_EXECUTOR}}
           - operation: decomposePar
@@ -51,5 +55,7 @@ variation:
                 numberSubDomains: ${{ 2 * ${{env.NCPUS}} }}
               - method: simple
                 numberSubDomains: ${{ 4 * ${{env.NCPUS}} }}
+              - method: simple
+                numberSubDomains: ${{ 8 * ${{env.NCPUS}} }}
             parent:
               executor: CPU
