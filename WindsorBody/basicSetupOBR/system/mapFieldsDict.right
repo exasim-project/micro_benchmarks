@@ -1,0 +1,42 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      mapFieldsDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Specify how to map patches. There are three different options:
+// - patch exists in the source case: specify mapping (patchMap)
+// - patch should be interpolated from internal values in source case
+//   (cuttingPatches)
+// - patch should not be mapped. Default if not in patchMap or cuttingPatches
+
+// List of pairs of target/source patches for mapping
+patchMap
+(
+    Windsor_Body_2 Windsor_Body_2
+    Windsor_Pins_2 Windsor_Pins_2
+    Windsor_Base_2 Windsor_Base_2
+    CFDWT_Right CFDWT_Right
+    CFDWT_In_2 CFDWT_In_2
+    CFDWT_Floor_2 CFDWT_Floor_2
+    CFDWT_Roof_2 CFDWT_Roof_2
+    CFDWT_Out_2 CFDWT_Out_2
+);
+
+// List of target patches cutting the source domain (these need to be
+// handled specially e.g. interpolated from internal values)
+cuttingPatches
+(
+);
+
+// ************************************************************************* //

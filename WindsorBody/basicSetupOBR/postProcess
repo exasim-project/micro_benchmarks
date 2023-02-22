@@ -1,0 +1,43 @@
+#!/bin/bash -l
+#SBATCH --job-name "postPro_WindsorBody"
+#SBATCH --ntasks=128
+#SBATCH --time=03:00:00
+#SBATCH --partition=compute
+#SBATCH --mail-type=NONE
+#SBATCH --account=bmbf_2022_EXASIM
+
+# EXIT ON ERROR
+set -e
+
+### directories
+logDir="logFiles"
+
+# function to read parameters from caseDefinition...
+function getInputParam () 
+{
+    varVal=`grep -w ${1} system/include/caseDefinition | cut -d ";" -f 1 | grep -v '//'`
+    varVal=`echo ${varVal:${#1}}`
+    echo $varVal
+}
+# get input parameters
+nProcs=`getInputParam nCores`
+
+### mpi command to run on your machine (mpirun or equivalent)
+parEx="srun"
+#parEx="mpirun -np $nProcs"
+
+use_control="system/controlDict.RANS"
+use_decompose="-decomposeParDict system/decomposeParDict"
+use_parallel="-parallel $use_decompose"
+
+time (
+echo "Running ..."
+$parEx simpleFoam $use_parallel -postProcess -func yPlus -latestTime > $logDir/30_postProcessYPlus.log 2>&1 || exit 1
+$parEx simpleFoam $use_parallel -postProcess -func Q -latestTime > $logDir/31_postProcessQ.log 2>&1 || exit 1
+$parEx foamToEnsight $use_parallel -latestTime > $logDir/32_foamToEnsight.log 2>&1 || exit 1
+python3 ../assets/scripts/python-files/plotScript.py . > $logDir/33_plotScript.log 2>&1 || exit 1
+)
+echo
+
+echo "Finished."
+

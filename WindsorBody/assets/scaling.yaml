@@ -1,7 +1,7 @@
 case:
     type: CaseOnDisk
     solver: pimpleFoam
-    origin: basicSetup 
+    origin: basicSetupOBR 
     post_build:
       - shell: ${{yaml.location}}/scripts/getMesh.sh
       - controlDict:
@@ -10,7 +10,7 @@ case:
            endTime: 50.0
 variation:
   - operation: shell
-    key: ${{yaml.location}}/scripts/concatenateDomain.sh
+    key: ${{yaml.location}}/scripts/concatenateDomainOBR.sh
     values: [-n1, -n2, -n3]
     post_build:
       - shell: rm -rf 0

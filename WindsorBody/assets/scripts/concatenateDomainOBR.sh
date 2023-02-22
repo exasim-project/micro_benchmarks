@@ -14,7 +14,11 @@
 
 # set default number of concatenations
 nCaseCopies=2
+<<<<<<< HEAD
 concatFields=false
+=======
+concatFields=true
+>>>>>>> case_windsor_body
 overwriteFlag='-overwrite'
 # --- get options
 while getopts ":n:f" opt; do
@@ -63,8 +67,11 @@ echo
 logDir="logFiles"
 mkdir -p $logDir
 cp system/fvSchemes.pre system/fvSchemes
+<<<<<<< HEAD
 cp system/fvSolution.RANS system/fvSolution
 cp system/controlDict.RANS system/controlDict
+=======
+>>>>>>> case_windsor_body
 
 cd ..
 # --- create temporary directories with translated domain
@@ -133,7 +140,10 @@ do
     rm ./$timeDir/meshPhi || rm ./0/meshPhi || true
 done
 # check mesh
+<<<<<<< HEAD
 checkMesh > $logDir/05_checkMesh.log 2>&1 || exit 1
+=======
+>>>>>>> case_windsor_body
 
 if $concatFields; then
     cp -a 0.orig/* $timeDir/
@@ -167,4 +177,8 @@ if $concatFields; then
     done
 fi
 
+<<<<<<< HEAD
 rm -r ../tmpDir*
+=======
+rm -r ../tmpDir*
+>>>>>>> case_windsor_body
