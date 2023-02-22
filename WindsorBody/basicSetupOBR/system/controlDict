@@ -1,0 +1,59 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2206                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include          "include/caseDefinition"
+
+application       simpleFoam;
+
+startFrom         latestTime;
+startTime         0;
+stopAt            endTime;
+endTime           1000;
+
+deltaT            1;
+
+writeControl      timeStep; 
+writeInterval     250;
+
+purgeWrite        2;
+
+writeFormat       binary;
+writePrecision    16;
+writeCompression  off;
+
+timeFormat        general;
+timePrecision     7;
+
+runTimeModifiable yes;
+adjustableRunTime no;
+
+
+functions
+{
+    #include "wallFields"
+    #include "volFields"
+    #include "calc_cp"
+    #include "fieldMinMax"
+    #include "solverInfo"
+    #include "forceCoeffs"
+    #include "probes/probes_1-Centerline"
+    #include "probes/probes_2-Glasshouse"
+    #include "probes/probes_3-Bumper"
+    #include "probes/probes_4-Base"
+    #include "probes/probes_reference"
+}
+
+// ************************************************************************* //

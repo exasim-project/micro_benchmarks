@@ -14,6 +14,9 @@ case:
             tolerance: 1e-04
             relTol: 0
             maxIter: 3000
+            #      - setKeyValuePair:
+            #file: constant/transportProperties
+            #foo: 3000
 variation:
   - operation: blockMesh
     schema: "mesh/{modifyBlock}"
@@ -33,7 +36,8 @@ variation:
           - set: solvers/p
             preconditioner: none
             solver: GKOCG
-            forceHostBuffer: True
+            forceHostBuffer: 1
+            verbose: 1
             executor: ${{env.GINKGO_EXECUTOR}}
           - set: solvers/p
             solver: PCG
