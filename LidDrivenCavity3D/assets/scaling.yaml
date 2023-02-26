@@ -44,25 +44,4 @@ variation:
             preconditioner: none
             executor: CPU
         variation:
-          - operation: decomposePar
-            schema: "decomposition_GPU/{method}_{numberSubDomains}"
-            values:
-              - method: simple
-                numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 2 * ${{env.NGPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
-            parent:
-              executor: ${{env.GINKGO_EXECUTOR}}
-          - operation: decomposePar
-            schema: "decomposition_CPU/{method}_{numberSubDomains}"
-            values:
-              - method: simple
-                numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 2 * ${{env.NGPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
-            parent:
-              executor: CPU
+            ${{include.decomposition.yaml}}
