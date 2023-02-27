@@ -14,21 +14,8 @@ case:
             tolerance: 1e-04
             relTol: 0
             maxIter: 3000
-            #      - setKeyValuePair:
-            #file: constant/transportProperties
-            #foo: 3000
 variation:
-  - operation: blockMesh
-    schema: "mesh/{modifyBlock}"
-    values:
-      - modifyBlock: "(100 100 100)->(100 100 100)"
-        controlDict:
-          deltaT: 0.001
-          endTime: 0.02
-      - modifyBlock: "(100 100 100)->(50 50 50)"
-        controlDict:
-          deltaT: 0.0005
-          endTime: 0.01
+    ${{include.blockMesh.yaml}}
     variation:
       - operation: fvSolution
         schema: "linear_solver/{solver}{preconditioner}{executor}"
