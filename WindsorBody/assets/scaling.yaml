@@ -4,6 +4,7 @@ case:
     origin: basicSetup 
     post_build:
       - shell: ${{yaml.location}}/scripts/getMesh.sh
+      - shell: cp system/fvSchemes.RANS system/fvSchemes
       - controlDict:
            writeFormat: binary
            libs: ("libOGL.so")
@@ -28,34 +29,21 @@ variation:
             ranksPerGPU: ${{env.NCPUS_PER_GPU}}
             executor: ${{env.GINKGO_EXECUTOR}}
           - set: solvers/p
+            solver: GKOCG
+            preconditioner: BJ
+            forceHostBuffer: "true"
+            maxIter: 2000
+            verbose: 1
+            ranksPerGPU: ${{env.NCPUS_PER_GPU}}
+            executor: ${{env.GINKGO_EXECUTOR}}
+          - set: solvers/p
             solver: GAMG
             smoother: GaussSeidel
             preconditioner: GaussSeidel
             executor: CPU
+          - set: solvers/p
+            solver: PBiCGStab
+            preconditioner: DILU
+            executor: CPU
         variation:
-          - operation: decomposePar
-            schema: "decomposition_GPU/{method}_{numberSubDomains}"
-            values:
-              - method: simple
-                numberSubDomains: ${{ 1 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
-              - method: simple                                           
-                numberSubDomains: ${{ 2 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
-              - method: simple                                           
-                numberSubDomains: ${{ 4 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
-              - method: simple                                           
-                numberSubDomains: ${{ 8 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
-            parent:
-              executor: ${{env.GINKGO_EXECUTOR}}
-          - operation: decomposePar
-            schema: "decomposition_CPU/{method}_{numberSubDomains}"
-            values:
-              - method: simple
-                numberSubDomains: ${{ 1 * ${{env.NCPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 2 * ${{env.NCPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 4 * ${{env.NCPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 8 * ${{env.NCPUS}} }}
-            parent:
-              executor: CPU
+          ${{include.decomposition.yaml}}
