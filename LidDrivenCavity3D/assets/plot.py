@@ -29,6 +29,22 @@ def build_gko_query(field):
     return query
 
 
+def build_annotated_query_rel():
+    return " and ".join(
+        [
+            "solver",
+            "executor",
+            "SolveP_rel",
+            "MomentumPredictor_rel",
+            "MatrixAssemblyU_rel",
+            "MatrixAssemblyPI:_rel",
+            "MatrixAssemblyPII:_rel",
+            "nCells",
+            "nSubDomains",
+        ]
+    )
+
+
 def build_annotated_query():
     return " and ".join(
         [
@@ -43,6 +59,38 @@ def build_annotated_query():
             "nSubDomains",
         ]
     )
+
+
+def plot_simple_break_down_rel(jobs, field):
+    """the basic break down the solver annotations without OGL data"""
+
+    query = build_annotated_query_rel()
+
+    res = signac_operations.query_to_dict(list(jobs), query)
+    res = [list(d.values())[0] for d in res]
+    df = pd.DataFrame.from_records(res, index=["solver"])
+
+    grouped = df.groupby("nCells")
+    group_keys = grouped.groups.keys()
+
+    fig, axes = plt.subplots(
+        nrows=1, ncols=len(group_keys), figsize=(12, 4), sharey=True
+    )
+
+    axes[0].set_ylabel("Time [%]")
+
+    for key, ax in zip(group_keys, axes.flatten()):
+        group = grouped.get_group(key)
+        group = group.sort_index()
+
+        ax = group.drop(columns=["nCells"]).plot.bar(ax=ax, stacked=True, legend=False)
+        ax.set_title(f"nCells = {key}")
+
+    h, l = ax.get_legend_handles_labels()
+    l = [_.replace("_rel", "").replace(":", "") for _ in l]
+
+    ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
+    fig.savefig("assets/images/of_breakdown_rel.png", bbox_inches="tight")
 
 
 def plot_simple_break_down(jobs, field):
@@ -61,7 +109,7 @@ def plot_simple_break_down(jobs, field):
         nrows=1, ncols=len(group_keys), figsize=(12, 4), sharey=True
     )
 
-    axes[0].set_ylabel("Time [%]")
+    axes[0].set_ylabel("Time [ms]")
 
     for key, ax in zip(group_keys, axes.flatten()):
         group = grouped.get_group(key)
@@ -181,6 +229,7 @@ def plot_time_over_cells(jobs, field):
             "MomentumPredictor",
             # "TimeStep",
             "nCells",
+            "nSubDomains",
         ]
     )
 
