@@ -43,7 +43,7 @@ def build_annotated_query():
     )
 
 
-def plot_simple_break_down(jobs):
+def plot_simple_break_down(jobs, field):
     """the basic break down the solver annotations without OGL data"""
 
     query = build_annotated_query()
@@ -168,7 +168,7 @@ def plot_gko_break_down_over_runs(jobs, field):
     )
 
 
-def plot_time_over_cells(jobs):
+def plot_time_over_cells(jobs, field):
     query = " and ".join(
         [
             "solver",
@@ -202,8 +202,6 @@ def plot_time_over_cells(jobs):
         for _ in ["MomentumPredictor"]:
             l.append(f"{_} {k}")
 
-    print(l)
-
     ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
     fig.savefig("assets/images/time_solve.png", bbox_inches="tight")
 
@@ -222,6 +220,6 @@ def call(jobs):
     # assets/images/plots/hash.json
 
     dispatch_plot(plot_gko_break_down_over_runs, (jobs, "p"))
-    dispatch_plot(plot_simple_break_down, (jobs))
+    dispatch_plot(plot_simple_break_down, (jobs, "p"))
     dispatch_plot(plot_gko_break_down, (jobs, "p"))
-    # plot_time_over_cells(jobs)
+    dispatch_plot(plot_time_over_cells, (jobs, "p"))

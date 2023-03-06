@@ -4,7 +4,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 from collections import defaultdict
-from obr import signac_operations
+from obr import signac_operations, OpenFOAMCase
+
 
 def call(jobs):
     col_iter = ["init", "final", "iter"]
@@ -17,20 +18,20 @@ def call(jobs):
 
     # OGL keys
     OGLAnnotationKeys = [
-            key.format(field)
-            for key in [ 
-                "{}: update_local_matrix_data:",
-                "{}: update_non_local_matrix_data:",
-                "{}_matrix: call_update:",
-                "{}_rhs: call_update:",
-                "{}: init_precond:",
-                "{}: generate_solver:",
-                "{}: solve:",
-                "{}: copy_x_back:",
-                "{}: solve_multi_gpu",
-                ]
-            for field in ["Ux", "Uy", "Uz", "p"]
+        key.format(field)
+        for key in [
+            "{}: update_local_matrix_data:",
+            "{}: update_non_local_matrix_data:",
+            "{}_matrix: call_update:",
+            "{}_rhs: call_update:",
+            "{}: init_precond:",
+            "{}: generate_solver:",
+            "{}: solve:",
+            "{}: copy_x_back:",
+            "{}: solve_multi_gpu",
         ]
+        for field in ["Ux", "Uy", "Uz", "p"]
+    ]
 
     OGLAnnotations = [
         LogKey(search, ["proc", "time"], append_search_to_col=True)
@@ -39,19 +40,19 @@ def call(jobs):
 
     # Solver annotations
     SolverAnnotationKeys = [
-            "MatrixAssemblyU",
-            "MomentumPredictor",
-            "SolveP",
-            "MatrixAssemblyPI:",
-            "MatrixAssemblyPII:",
-            "TimeStep",
-        ]
+        "MatrixAssemblyU",
+        "MomentumPredictor",
+        "SolveP",
+        "MatrixAssemblyPI:",
+        "MatrixAssemblyPII:",
+        "TimeStep",
+    ]
 
     CombinedKeys = SolverAnnotationKeys + OGLAnnotationKeys
 
     SolverAnnotations = [
         LogKey(search, col_time, append_search_to_col=True)
-        for search in  SolverAnnotationKeys
+        for search in SolverAnnotationKeys
     ]
 
     logKeys = [pIter, UIter]
@@ -68,6 +69,7 @@ def call(jobs):
             continue
 
         case_path = Path(job.path) / "case"
+        of_case = OpenFOAMCase(case_path)
 
         # get latest log
         runs = job.doc["obr"][solver]
@@ -75,8 +77,8 @@ def call(jobs):
         # pop old results
         for k in CombinedKeys:
             try:
-                 job.doc["obr"].pop(k)
-                 job.doc["obr"].pop(k + "_rel")
+                job.doc["obr"].pop(k)
+                job.doc["obr"].pop(k + "_rel")
             except Exception as e:
                 print(e)
 
@@ -89,20 +91,23 @@ def call(jobs):
             # write average times to job.doc
             for k in CombinedKeys:
                 try:
-                     prev_res = job.doc["obr"].get(k, [])
-                     val = df.iloc[1:].mean()["time_" + k]
-                     prev_res.append(val)
-                     job.doc["obr"][k] = prev_res
+                    prev_res = job.doc["obr"].get(k, [])
+                    val = df.iloc[1:].mean()["time_" + k]
+                    prev_res.append(val)
+                    job.doc["obr"][k] = prev_res
                 except Exception as e:
                     print(e)
 
             # write average times step ratio to job.doc
             for k, rel in zip(CombinedKeys, ["time_TimeStep", "Ux: solve_multi_gpu"]):
                 try:
-                     prev_res = job.doc["obr"].get(k + "_rel", [])
-                     prev_res.append(df.iloc[1:].mean()[rel])
-                     job.doc["obr"][k + "_rel"] =  prev_res
+                    prev_res = job.doc["obr"].get(k + "_rel", [])
+                    prev_res.append(df.iloc[1:].mean()[rel])
+                    job.doc["obr"][k + "_rel"] = prev_res
                 except Exception as e:
                     print(e)
 
             job.doc["obr"]["nCells"] = cache.search_parent(job, "nCells")
+            job.doc["obr"]["nSubDomains"] = of_case.decomposeParDict.get(
+                "numberOfSubdomains"
+            )
