@@ -77,14 +77,14 @@ def plot_simple_break_down(jobs, field):
     fig.savefig("assets/images/of_breakdown.png", bbox_inches="tight")
 
 
-def plot_gko_break_down(jobs, field):
+def plot_gko_break_down_over_x(jobs, field, x):
     """the basic break down the solver annotations without OGL data"""
 
     query = build_gko_query(field)
 
     res = signac_operations.query_to_dict(list(jobs), query)
     res = [list(d.values())[0] for d in res]
-    df = pd.DataFrame.from_records(res, index=["solver"])
+    df = pd.DataFrame.from_records(res, index=[x])
 
     grouped = df.groupby("nCells")
     group_keys = grouped.groups.keys()
@@ -106,7 +106,9 @@ def plot_gko_break_down(jobs, field):
     l = [_.replace("_rel", "").replace(":", "") for _ in l]
 
     ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
-    fig.savefig(f"assets/images/gko_breakdown_{field}.png", bbox_inches="tight")
+    fig.savefig(
+        f"assets/images/gko_breakdown_{field}_over_{x}.png", bbox_inches="tight"
+    )
 
 
 def plot_gko_break_down_over_runs(jobs, field):
@@ -223,5 +225,6 @@ def call(jobs):
 
     dispatch_plot(plot_gko_break_down_over_runs, (jobs, "p"))
     dispatch_plot(plot_simple_break_down, (jobs, "p"))
-    dispatch_plot(plot_gko_break_down, (jobs, "p"))
+    dispatch_plot(plot_gko_break_down_over_x, (jobs, "p", "solver"))
+    dispatch_plot(plot_gko_break_down_over_x, (jobs, "p", "nSubDomains"))
     dispatch_plot(plot_time_over_cells, (jobs, "p"))
