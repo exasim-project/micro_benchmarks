@@ -208,13 +208,20 @@ def plot_time_over_cells(jobs):
     fig.savefig("assets/images/time_solve.png", bbox_inches="tight")
 
 
+def dispatch_plot(func, args):
+    try:
+        func(*args)
+    except Exception as e:
+        print("failed to plot", func.__name__, e)
+
+
 def call(jobs):
     """entry point for plotting"""
     # storage format
     # assets/images/plots/hash.png
     # assets/images/plots/hash.json
 
-    plot_gko_break_down_over_runs(jobs, "p")
-    plot_simple_break_down(jobs)
-    plot_gko_break_down(jobs, "p")
+    dispatch_plot(plot_gko_break_down_over_runs, (jobs, "p"))
+    dispatch_plot(plot_simple_break_down, (jobs))
+    dispatch_plot(plot_gko_break_down, (jobs, "p"))
     # plot_time_over_cells(jobs)
