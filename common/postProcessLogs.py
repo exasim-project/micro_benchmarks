@@ -69,7 +69,7 @@ def call(jobs):
             continue
 
         case_path = Path(job.path) / "case"
-        of_case = OpenFOAMCase(case_path)
+        of_case = OpenFOAMCase.OpenFOAMCase(case_path, job)
 
         # get latest log
         runs = job.doc["obr"][solver]
