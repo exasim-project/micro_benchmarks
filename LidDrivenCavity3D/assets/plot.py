@@ -6,28 +6,58 @@ import pandas as pd
 from obr import signac_operations
 
 
+def build_gko_query(field):
+    query = " and ".join(
+        [
+            f.format(field)
+            for f in [
+                "solver",
+                "{}: update_local_matrix_data:",
+                "{}: update_non_local_matrix_data:",
+                "{}_matrix: call_update:",
+                "{}_rhs: call_update:",
+                "{}: init_precond:",
+                "{}: generate_solver:",
+                "{}: solve:",
+                "{}: copy_x_back:",
+                "nCells",
+            ]
+        ]
+    )
+
+    return query
+
+
+def build_annotated_query():
+    return " and ".join(
+        [
+            "solver",
+            "executor",
+            "SolveP_rel",
+            "MomentumPredictor_rel",
+            "MatrixAssemblyU_rel",
+            "MatrixAssemblyPI:_rel",
+            "MatrixAssemblyPII:_rel",
+            "nCells",
+        ]
+    )
+
+
 def plot_simple_break_down(jobs):
-    """ the basic break down the solver annotations without OGL data """
+    """the basic break down the solver annotations without OGL data"""
 
-    query = " and ".join([
-        "solver",
-        "executor",
-        "SolveP_rel",
-        "MomentumPredictor_rel",
-        "MatrixAssemblyU_rel",
-        "MatrixAssemblyPI:_rel",
-        "MatrixAssemblyPII:_rel",
-        "nCells"
-        ])
+    query = build_annotated_query()
 
-    res = signac_operations.query_to_dict(list(jobs), query) 
+    res = signac_operations.query_to_dict(list(jobs), query)
     res = [list(d.values())[0] for d in res]
     df = pd.DataFrame.from_records(res, index=["solver"])
 
-    grouped = df.groupby("nCells");
+    grouped = df.groupby("nCells")
     group_keys = grouped.groups.keys()
 
-    fig, axes = plt.subplots(nrows=1, ncols=len(group_keys), figsize=(12,4), sharey=True)
+    fig, axes = plt.subplots(
+        nrows=1, ncols=len(group_keys), figsize=(12, 4), sharey=True
+    )
 
     axes[0].set_ylabel("Time [%]")
 
@@ -38,36 +68,28 @@ def plot_simple_break_down(jobs):
         ax = group.drop(columns=["nCells"]).plot.bar(ax=ax, stacked=True, legend=False)
         ax.set_title(f"nCells = {key}")
 
-    h,l = ax.get_legend_handles_labels()
-    l = [_.replace("_rel","").replace(":","") for _ in l]
+    h, l = ax.get_legend_handles_labels()
+    l = [_.replace("_rel", "").replace(":", "") for _ in l]
 
-    ax.legend(h, l, loc='center left', bbox_to_anchor=(1.0, 0.5))
-    fig.savefig("assets/images/of_breakdown.png", bbox_inches='tight')
+    ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
+    fig.savefig("assets/images/of_breakdown.png", bbox_inches="tight")
 
-def plot_gko_break_down(jobs):
-    """ the basic break down the solver annotations without OGL data """
 
-    query = " and ".join([
-        "solver",
-        "Ux: update_local_matrix_data:",
-        "Ux: update_non_local_matrix_data:",
-        "Ux_matrix: call_update:",
-        "Ux_rhs: call_update:",
-        "Ux: init_precond:",
-        "Ux: generate_solver:",
-        "Ux: solve:",
-        "Ux: copy_x_back:",
-        "nCells"
-        ])
+def plot_gko_break_down(jobs, field):
+    """the basic break down the solver annotations without OGL data"""
 
-    res = signac_operations.query_to_dict(list(jobs), query) 
+    query = build_gko_query(field)
+
+    res = signac_operations.query_to_dict(list(jobs), query)
     res = [list(d.values())[0] for d in res]
     df = pd.DataFrame.from_records(res, index=["solver"])
 
-    grouped = df.groupby("nCells");
+    grouped = df.groupby("nCells")
     group_keys = grouped.groups.keys()
 
-    fig, axes = plt.subplots(nrows=1, ncols=len(group_keys), figsize=(12,4), sharey=True)
+    fig, axes = plt.subplots(
+        nrows=1, ncols=len(group_keys), figsize=(12, 4), sharey=True
+    )
 
     axes[0].set_ylabel("Time [ms]")
 
@@ -78,30 +100,18 @@ def plot_gko_break_down(jobs):
         ax = group.drop(columns=["nCells"]).plot.bar(ax=ax, stacked=True, legend=False)
         ax.set_title(f"nCells = {key}")
 
-    h,l = ax.get_legend_handles_labels()
-    l = [_.replace("_rel","").replace(":","") for _ in l]
+    h, l = ax.get_legend_handles_labels()
+    l = [_.replace("_rel", "").replace(":", "") for _ in l]
 
-    ax.legend(h, l, loc='center left', bbox_to_anchor=(1.0, 0.5))
-    fig.savefig("assets/images/gko_breakdown.png", bbox_inches='tight')
+    ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
+    fig.savefig(f"assets/images/gko_breakdown_{field}.png", bbox_inches="tight")
 
-def plot_gko_break_down_over_runs(jobs):
-    """ the basic break down the solver annotations without OGL data """
 
-    query = " and ".join([
-        "solver",
-        "p: update_local_matrix_data:",
-        "p: update_non_local_matrix_data:",
-        "p_matrix: call_update:",
-        "p_rhs: call_update:",
-        "p: init_precond:",
-        "p: generate_solver:",
-        "p: solve:",
-        "p: copy_x_back:",
-        "nCells"
-        ])
-    print(query)
+def plot_gko_break_down_over_runs(jobs, field):
+    """the basic break down the solver annotations without OGL data"""
 
-    res = signac_operations.query_to_dict(list(jobs), query, False, False) 
+    query = build_gko_query(field)
+    res = signac_operations.query_to_dict(list(jobs), query, False, False)
 
     # unpack results to records
     def pop_if_list(d):
@@ -109,32 +119,35 @@ def plot_gko_break_down_over_runs(jobs):
         all_scalars = True
         for k, v in d.items():
             if not isinstance(v, list):
-                d_tmp.update({k:v})
+                d_tmp.update({k: v})
                 continue
             if len(v) > 0:
                 all_scalars = False
                 d_tmp["run"] = len(v)
-                d_tmp.update({k:v.pop()})
-                
+                d_tmp.update({k: v.pop()})
+
         return d, all_scalars, d_tmp
 
     records = []
     for d_ in res:
         all_scalars = False
         d = list(d_.values())[0]
-        while(not all_scalars):
+        while not all_scalars:
             d, all_scalars, d_tmp = pop_if_list(d)
             records.append(d_tmp)
 
+    # no records created stop here
+    if not records:
+        return
 
-    print(records)
     df = pd.DataFrame.from_records(records, index=["run"]).dropna()
-    print(df)
 
-    grouped = df.groupby("nCells");
+    grouped = df.groupby("nCells")
     group_keys = grouped.groups.keys()
 
-    fig, axes = plt.subplots(nrows=1, ncols=len(group_keys), figsize=(12,4), sharey=True)
+    fig, axes = plt.subplots(
+        nrows=1, ncols=len(group_keys), figsize=(12, 4), sharey=True
+    )
 
     axes[0].set_ylabel("Time [ms]")
 
@@ -146,32 +159,36 @@ def plot_gko_break_down_over_runs(jobs):
         ax = group.drop(columns=["nCells"]).plot.bar(ax=ax, stacked=True, legend=False)
         ax.set_title(f"nCells = {key}")
 
-    h,l = ax.get_legend_handles_labels()
-    l = [_.replace("_rel","").replace(":","") for _ in l]
+    h, l = ax.get_legend_handles_labels()
+    l = [_.replace("_rel", "").replace(":", "") for _ in l]
 
-    ax.legend(h, l, loc='center left', bbox_to_anchor=(1.0, 0.5))
-    fig.savefig("assets/images/gko_breakdown_over_runs.png", bbox_inches='tight')
+    ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
+    fig.savefig(
+        f"assets/images/gko_breakdown_over_runs_{field}.png", bbox_inches="tight"
+    )
 
 
 def plot_time_over_cells(jobs):
-    query = " and ".join([
-        "solver",
-        "executor",
-        # "SolveP",
-        "MomentumPredictor",
-        # "TimeStep",
-        "nCells"
-        ])
+    query = " and ".join(
+        [
+            "solver",
+            "executor",
+            # "SolveP",
+            "MomentumPredictor",
+            # "TimeStep",
+            "nCells",
+        ]
+    )
 
-    res = signac_operations.query_to_dict(list(jobs), query) 
+    res = signac_operations.query_to_dict(list(jobs), query)
     res = [list(d.values())[0] for d in res]
     df = pd.DataFrame.from_records(res, index=["nCells"])
 
-    grouped = df.groupby("solver");
-    linestyles = ["-", "-.", ":" ]
+    grouped = df.groupby("solver")
+    linestyles = ["-", "-.", ":"]
     group_keys = grouped.groups.keys()
 
-    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(12,4), sharey=True)
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(12, 4), sharey=True)
     axes.set_ylabel("Time [ms]")
 
     for key, lt in zip(group_keys, linestyles):
@@ -179,7 +196,7 @@ def plot_time_over_cells(jobs):
         group = group.sort_index()
         ax = group.plot(ax=axes, legend=False, linestyle=lt, marker="x")
 
-    h,ls = ax.get_legend_handles_labels()
+    h, ls = ax.get_legend_handles_labels()
     l = []
     for k in group_keys:
         for _ in ["MomentumPredictor"]:
@@ -187,16 +204,17 @@ def plot_time_over_cells(jobs):
 
     print(l)
 
-    ax.legend(h, l, loc='center left', bbox_to_anchor=(1.0, 0.5))
-    fig.savefig("assets/images/time_solve.png", bbox_inches='tight')
+    ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
+    fig.savefig("assets/images/time_solve.png", bbox_inches="tight")
+
 
 def call(jobs):
-    """ entry point for plotting """
+    """entry point for plotting"""
     # storage format
     # assets/images/plots/hash.png
     # assets/images/plots/hash.json
 
-    plot_gko_break_down_over_runs(jobs)
-    #plot_simple_break_down(jobs)
-    #plot_gko_break_down(jobs)
-    #plot_time_over_cells(jobs)
+    plot_gko_break_down_over_runs(jobs, "p")
+    plot_simple_break_down(jobs)
+    plot_gko_break_down(jobs, "p")
+    # plot_time_over_cells(jobs)

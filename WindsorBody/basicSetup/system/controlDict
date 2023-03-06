@@ -41,8 +41,7 @@ runTimeModifiable yes;
 adjustableRunTime no;
 
 
-functions
-{
+functions {
     #include "wallFields"
     #include "volFields"
     #include "calc_cp"

@@ -61,6 +61,7 @@ SIMPLE
 {
     nNonOrthogonalCorrectors 0;
     consistent yes;
+    convergenceCriterion 1.0e-6;
 }
 
 potentialFlow
