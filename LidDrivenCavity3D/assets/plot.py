@@ -21,6 +21,7 @@ def build_gko_query(field):
                 "{}: solve:",
                 "{}: copy_x_back:",
                 "nCells",
+                "nSubDomains",
             ]
         ]
     )
@@ -39,6 +40,7 @@ def build_annotated_query():
             "MatrixAssemblyPI:_rel",
             "MatrixAssemblyPII:_rel",
             "nCells",
+            "nSubDomains",
         ]
     )
 
