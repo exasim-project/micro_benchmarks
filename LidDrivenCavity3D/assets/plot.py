@@ -86,9 +86,7 @@ def simple_break_down_rel(jobs, field):
     """the basic break down the solver annotations without OGL data"""
 
     query = build_annotated_query_rel()
-    df, grouped, grouped_keys = from_query_to_grouped_df(
-        jobs, query, "solver", "nCells"
-    )
+    df, grouped, group_keys = from_query_to_grouped_df(jobs, query, "solver", "nCells")
 
     fig, axes = plt.subplots(
         nrows=1, ncols=len(group_keys), figsize=(12, 4), sharey=True
@@ -120,7 +118,7 @@ def simple_break_down(jobs, field):
     query = build_annotated_query()
     group_key = "nCells"
     sub_group = "solver"
-    df, grouped, grouped_keys = from_query_to_grouped_df(
+    df, grouped, group_keys = from_query_to_grouped_df(
         jobs, query, sub_group, group_key
     )
 
@@ -150,7 +148,7 @@ def gko_break_down_over_x(jobs, field, x):
     """the basic break down the solver annotations without OGL data"""
 
     query = build_gko_query(field)
-    df, grouped, grouped_keys = from_query_to_grouped_df(jobs, query, x, "nCells")
+    df, grouped, group_keys = from_query_to_grouped_df(jobs, query, x, "nCells")
 
     fig, axes = plt.subplots(
         nrows=1, ncols=len(group_keys), figsize=(12, 4), sharey=True
@@ -237,7 +235,7 @@ def gko_break_down_over_runs(jobs, field):
 
 def time_over_cells(jobs, field):
     query = build_annotated_query()
-    df, grouped, grouped_keys = from_query_to_grouped_df(jobs, query, x, "nCells")
+    df, grouped, group_keys = from_query_to_grouped_df(jobs, query, x, "nCells")
 
     df = df[df["nSubDomains"] == 32]
 
