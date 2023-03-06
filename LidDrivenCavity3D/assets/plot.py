@@ -3,71 +3,200 @@ from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
-from collections import defaultdict
 from obr import signac_operations
 
 
-def call(jobs):
+def plot_simple_break_down(jobs):
+    """ the basic break down the solver annotations without OGL data """
 
-    col_iter = ["init", "final", "iter"]
-    col_time = ["time"]
-    p_steps = ["_p", "_pFinal"]
-    U_components = ["_Ux", "_Uy", "_Uz"]
+    query = " and ".join([
+        "solver",
+        "executor",
+        "SolveP_rel",
+        "MomentumPredictor_rel",
+        "MatrixAssemblyU_rel",
+        "MatrixAssemblyPI:_rel",
+        "MatrixAssemblyPII:_rel",
+        "nCells"
+        ])
 
-    pIter = LogKey("Solving for p", col_iter, p_steps)
-    UIter = LogKey("Solving for U", col_iter, U_components)
-    pTiming = LogKey("Linear solve p", col_time, p_steps)
-    pTiming = LogKey("Linear solve U", col_time, ["_U"])
+    res = signac_operations.query_to_dict(list(jobs), query) 
+    res = [list(d.values())[0] for d in res]
+    df = pd.DataFrame.from_records(res, index=["solver"])
 
-    logKeys = [
-        LogKey(search, col_time, append_search_to_col=True)
-        for search in [
-            "global_index_init",
-            "update_local_matrix_data",
-            "update_non_local_matrix_data",
-            "p_matrix: call_update",
-            "p_rhs: call_update",
-            "init_precond",
-            "generate_solver",
-            "solve",
-            "copy_x_back",
-        ]
-    ]
+    grouped = df.groupby("nCells");
+    group_keys = grouped.groups.keys()
 
-    logKeys += [pIter, UIter, pTiming]
+    fig, axes = plt.subplots(nrows=1, ncols=len(group_keys), figsize=(12,4), sharey=True)
 
-    cache = signac_operations.JobCache(jobs)
+    axes[0].set_ylabel("Time [%]")
+
+    for key, ax in zip(group_keys, axes.flatten()):
+        group = grouped.get_group(key)
+        group = group.sort_index()
+
+        ax = group.drop(columns=["nCells"]).plot.bar(ax=ax, stacked=True, legend=False)
+        ax.set_title(f"nCells = {key}")
+
+    h,l = ax.get_legend_handles_labels()
+    l = [_.replace("_rel","").replace(":","") for _ in l]
+
+    ax.legend(h, l, loc='center left', bbox_to_anchor=(1.0, 0.5))
+    fig.savefig("assets/images/of_breakdown.png", bbox_inches='tight')
+
+def plot_gko_break_down(jobs):
+    """ the basic break down the solver annotations without OGL data """
+
+    query = " and ".join([
+        "solver",
+        "Ux: update_local_matrix_data:",
+        "Ux: update_non_local_matrix_data:",
+        "Ux_matrix: call_update:",
+        "Ux_rhs: call_update:",
+        "Ux: init_precond:",
+        "Ux: generate_solver:",
+        "Ux: solve:",
+        "Ux: copy_x_back:",
+        "nCells"
+        ])
+
+    res = signac_operations.query_to_dict(list(jobs), query) 
+    res = [list(d.values())[0] for d in res]
+    df = pd.DataFrame.from_records(res, index=["solver"])
+
+    grouped = df.groupby("nCells");
+    group_keys = grouped.groups.keys()
+
+    fig, axes = plt.subplots(nrows=1, ncols=len(group_keys), figsize=(12,4), sharey=True)
+
+    axes[0].set_ylabel("Time [ms]")
+
+    for key, ax in zip(group_keys, axes.flatten()):
+        group = grouped.get_group(key)
+        group = group.sort_index()
+
+        ax = group.drop(columns=["nCells"]).plot.bar(ax=ax, stacked=True, legend=False)
+        ax.set_title(f"nCells = {key}")
+
+    h,l = ax.get_legend_handles_labels()
+    l = [_.replace("_rel","").replace(":","") for _ in l]
+
+    ax.legend(h, l, loc='center left', bbox_to_anchor=(1.0, 0.5))
+    fig.savefig("assets/images/gko_breakdown.png", bbox_inches='tight')
+
+def plot_gko_break_down_over_runs(jobs):
+    """ the basic break down the solver annotations without OGL data """
+
+    query = " and ".join([
+        "solver",
+        "p: update_local_matrix_data:",
+        "p: update_non_local_matrix_data:",
+        "p_matrix: call_update:",
+        "p_rhs: call_update:",
+        "p: init_precond:",
+        "p: generate_solver:",
+        "p: solve:",
+        "p: copy_x_back:",
+        "nCells"
+        ])
+    print(query)
+
+    res = signac_operations.query_to_dict(list(jobs), query, False, False) 
+
+    # unpack results to records
+    def pop_if_list(d):
+        d_tmp = {}
+        all_scalars = True
+        for k, v in d.items():
+            if not isinstance(v, list):
+                d_tmp.update({k:v})
+                continue
+            if len(v) > 0:
+                all_scalars = False
+                d_tmp["run"] = len(v)
+                d_tmp.update({k:v.pop()})
+                
+        return d, all_scalars, d_tmp
+
     records = []
-    d_tmp = defaultdict(list)
+    for d_ in res:
+        all_scalars = False
+        d = list(d_.values())[0]
+        while(not all_scalars):
+            d, all_scalars, d_tmp = pop_if_list(d)
+            records.append(d_tmp)
 
-    for j in jobs:
-        solver = j.doc["obr"].get("solver")
 
-        # skip jobs without a solver
-        if not solver:
-            continue
+    print(records)
+    df = pd.DataFrame.from_records(records, index=["run"]).dropna()
+    print(df)
 
-        case_path = Path(j.path) / "case"
+    grouped = df.groupby("nCells");
+    group_keys = grouped.groups.keys()
 
-        # get latest log
-        log_path = case_path / j.doc["obr"][solver][-1]["log"]
+    fig, axes = plt.subplots(nrows=1, ncols=len(group_keys), figsize=(12,4), sharey=True)
 
-        # parse logs for given keys
-        df = LogFile(logKeys).parse_to_df(log_path)
-        print(df)
+    axes[0].set_ylabel("Time [ms]")
 
-        # skip first row / first time step
-        solver = j.sp["solver"]
-        d_tmp[solver].append((cache.search_parent(j, "nCells"), [df.iloc[1:].mean()["time_solve"]]))
+    # iterate over nCells
+    for key, ax in zip(group_keys, axes.flatten()):
+        group = grouped.get_group(key)
+        group = group.sort_index()
 
-    fig, ax = plt.subplots(nrows=1, ncols=1)
-    for solver, data in d_tmp.items():
-         nCells, time = zip(*data)
-         line, = ax.plot(nCells, time)
-         line.set_label(solver)
+        ax = group.drop(columns=["nCells"]).plot.bar(ax=ax, stacked=True, legend=False)
+        ax.set_title(f"nCells = {key}")
 
-    ax.legend()
-    ax.set_xlabel("Number of cells [-]")
-    ax.set_ylabel("Time [ms]")
-    fig.savefig("assets/image.png")
-    plt.close(fig)
+    h,l = ax.get_legend_handles_labels()
+    l = [_.replace("_rel","").replace(":","") for _ in l]
+
+    ax.legend(h, l, loc='center left', bbox_to_anchor=(1.0, 0.5))
+    fig.savefig("assets/images/gko_breakdown_over_runs.png", bbox_inches='tight')
+
+
+def plot_time_over_cells(jobs):
+    query = " and ".join([
+        "solver",
+        "executor",
+        # "SolveP",
+        "MomentumPredictor",
+        # "TimeStep",
+        "nCells"
+        ])
+
+    res = signac_operations.query_to_dict(list(jobs), query) 
+    res = [list(d.values())[0] for d in res]
+    df = pd.DataFrame.from_records(res, index=["nCells"])
+
+    grouped = df.groupby("solver");
+    linestyles = ["-", "-.", ":" ]
+    group_keys = grouped.groups.keys()
+
+    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(12,4), sharey=True)
+    axes.set_ylabel("Time [ms]")
+
+    for key, lt in zip(group_keys, linestyles):
+        group = grouped.get_group(key)
+        group = group.sort_index()
+        ax = group.plot(ax=axes, legend=False, linestyle=lt, marker="x")
+
+    h,ls = ax.get_legend_handles_labels()
+    l = []
+    for k in group_keys:
+        for _ in ["MomentumPredictor"]:
+            l.append(f"{_} {k}")
+
+    print(l)
+
+    ax.legend(h, l, loc='center left', bbox_to_anchor=(1.0, 0.5))
+    fig.savefig("assets/images/time_solve.png", bbox_inches='tight')
+
+def call(jobs):
+    """ entry point for plotting """
+    # storage format
+    # assets/images/plots/hash.png
+    # assets/images/plots/hash.json
+
+    plot_gko_break_down_over_runs(jobs)
+    #plot_simple_break_down(jobs)
+    #plot_gko_break_down(jobs)
+    #plot_time_over_cells(jobs)
