@@ -75,7 +75,7 @@ def from_query_to_grouped_df(jobs, query: str, index: str, group: str):
 
     grouped = df.groupby(group)
     group_keys = grouped.groups.keys()
-    return df, grouped, grouped_keys
+    return df, grouped, group_keys
 
 
 def plot_impl_():
