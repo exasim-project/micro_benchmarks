@@ -101,6 +101,7 @@ def plot_simple_break_down(jobs, field):
     res = signac_operations.query_to_dict(list(jobs), query)
     res = [list(d.values())[0] for d in res]
     df = pd.DataFrame.from_records(res, index=["solver"])
+    df = df[df["nSubDomains"] == 32]
 
     grouped = df.groupby("nCells")
     group_keys = grouped.groups.keys()
