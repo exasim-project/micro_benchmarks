@@ -68,7 +68,7 @@ def dispatch_plot(func, args):
         print("failed to plot", func.__name__, e)
 
 
-def from_query_to_grouped_df(query: str, index: str group: str):
+def from_query_to_grouped_df(query: str, index: str, group: str):
     res = signac_operations.query_to_dict(list(jobs), query)
     res = [list(d.values())[0] for d in res]
     df = pd.DataFrame.from_records(res, index=[index])
@@ -87,7 +87,6 @@ def simple_break_down_rel(jobs, field):
 
     query = build_annotated_query_rel()
     df, grouped, grouped_keys = from_query_to_grouped_df(query, "solver", "nCells")
-
 
     fig, axes = plt.subplots(
         nrows=1, ncols=len(group_keys), figsize=(12, 4), sharey=True
