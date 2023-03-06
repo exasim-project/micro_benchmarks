@@ -79,7 +79,7 @@ def from_query_to_grouped_df(query: str, index: str, group: str):
 
 
 def plot_impl_():
-    continue
+    pass
 
 
 def simple_break_down_rel(jobs, field):
