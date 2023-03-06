@@ -50,11 +50,11 @@ def build_annotated_query():
         [
             "solver",
             "executor",
-            "SolveP_rel",
-            "MomentumPredictor_rel",
-            "MatrixAssemblyU_rel",
-            "MatrixAssemblyPI:_rel",
-            "MatrixAssemblyPII:_rel",
+            "SolveP",
+            "MomentumPredictor",
+            "MatrixAssemblyU",
+            "MatrixAssemblyPI:",
+            "MatrixAssemblyPII:",
             "nCells",
             "nSubDomains",
         ]
@@ -221,21 +221,13 @@ def plot_gko_break_down_over_runs(jobs, field):
 
 
 def plot_time_over_cells(jobs, field):
-    query = " and ".join(
-        [
-            "solver",
-            "executor",
-            # "SolveP",
-            "MomentumPredictor",
-            # "TimeStep",
-            "nCells",
-            "nSubDomains",
-        ]
-    )
+    query = build_annotated_query()
 
     res = signac_operations.query_to_dict(list(jobs), query)
     res = [list(d.values())[0] for d in res]
     df = pd.DataFrame.from_records(res, index=["nCells"])
+
+    df = df[df["nSubDomains"] == 32]
 
     grouped = df.groupby("solver")
     linestyles = ["-", "-.", ":"]
