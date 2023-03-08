@@ -108,6 +108,6 @@ def call(jobs):
                     print(e)
 
             job.doc["obr"]["nCells"] = cache.search_parent(job, "nCells")
-            job.doc["obr"]["nSubDomains"] = of_case.decomposeParDict.get(
+            job.doc["obr"]["nSubDomains"] = int(of_case.decomposeParDict.get(
                 "numberOfSubdomains"
-            )
+            ))

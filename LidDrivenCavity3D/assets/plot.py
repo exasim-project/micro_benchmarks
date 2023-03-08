@@ -5,60 +5,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from obr import signac_operations
 
+import exasim_plot_helpers as eph
 
-def build_gko_query(field):
-    query = " and ".join(
-        [
-            f.format(field)
-            for f in [
-                "solver",
-                "{}: update_local_matrix_data:",
-                "{}: update_non_local_matrix_data:",
-                "{}_matrix: call_update:",
-                "{}_rhs: call_update:",
-                "{}: init_precond:",
-                "{}: generate_solver:",
-                "{}: solve:",
-                "{}: copy_x_back:",
-                "nCells",
-                "nSubDomains",
-            ]
-        ]
-    )
-
-    return query
-
-
-def build_annotated_query_rel():
-    return " and ".join(
-        [
-            "solver",
-            "executor",
-            "SolveP_rel",
-            "MomentumPredictor_rel",
-            "MatrixAssemblyU_rel",
-            "MatrixAssemblyPI:_rel",
-            "MatrixAssemblyPII:_rel",
-            "nCells",
-            "nSubDomains",
-        ]
-    )
-
-
-def build_annotated_query():
-    return " and ".join(
-        [
-            "solver",
-            "executor",
-            "SolveP",
-            "MomentumPredictor",
-            "MatrixAssemblyU",
-            "MatrixAssemblyPI:",
-            "MatrixAssemblyPII:",
-            "nCells",
-            "nSubDomains",
-        ]
-    )
 
 
 def dispatch_plot(func, args):
@@ -66,16 +14,6 @@ def dispatch_plot(func, args):
         func(*args)
     except Exception as e:
         print("failed to plot", func.__name__, e)
-
-
-def from_query_to_grouped_df(jobs, query: str, index: str, group: str):
-    res = signac_operations.query_to_dict(list(jobs), query)
-    res = [list(d.values())[0] for d in res]
-    df = pd.DataFrame.from_records(res, index=[index])
-
-    grouped = df.groupby(group)
-    group_keys = grouped.groups.keys()
-    return df, grouped, group_keys
 
 
 def plot_impl_():
@@ -108,8 +46,54 @@ def simple_break_down_rel(jobs, field):
     fig.savefig("assets/images/of_breakdown_rel.png", bbox_inches="tight")
 
 
-def speed_up(jobs):
-    pass
+def speed_up_over_resolution_impl(jobs, x):
+    annotated_query = eph.signac_conversion.build_annotated_query()
+    df = eph.signac_conversion.from_query_to_df(
+            jobs,
+            query = annotated_query, 
+            index=["nCells", "solver", "executor", "nSubDomains"])
+
+    partitionings = set(
+        df[df.index.get_level_values("executor") != "CPU"].index.get_level_values("nSubDomains"))
+
+    fig, axes = plt.subplots( 
+                nrows=1, ncols=1, figsize=(8, 5), sharey=True
+                )
+
+    labels = []
+
+    # generate over different partitionings
+    # get base_ranks TODO find a generic way to do this 
+    base_ranks = 32 
+
+    # get available partitionings for non CPU case 
+    partitionings = set(
+            df[df.index.get_level_values("executor") != "CPU"].index.get_level_values("nSubDomains")
+            )
+
+    for part in partitionings:
+        # compute individual speed up
+        filtered_df = df[
+            (df.index.get_level_values("nSubDomains") == part) | (df.index.get_level_values("executor") == "CPU")]
+                    
+        speedup = eph.helpers.compute_speedup(
+            filtered_df, 
+            [("executor", "CPU")], 
+            ignore_indices=["nSubDomains"],
+            drop_indices=["solver"])
+                        
+        speedup = eph.helpers.idx_query(speedup, [("executor","hip")])     
+        speedup = eph.helpers.idx_keep_only(speedup, "nCells")     
+        speedup[x].plot(label=f"mpi ranks {part}")
+        labels.append(f"MPI ranks: {part}")
+                                        
+    axes.legend(labels)
+    axes.grid(True, which="both")
+    axes.set_xscale("log")
+    axes.set_ylabel(f"Speedup {x} [-]")
+
+    return fig 
+    
 
 
 def simple_break_down(jobs, field):
