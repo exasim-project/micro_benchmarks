@@ -7,30 +7,72 @@ from obr import signac_operations
 import os
 
 import exasim_plot_helpers as eph
+import numpy as np
 
 
-def dispatch_plot(func, *args, **kwargs):
-    try:
-        fig = func(*args, **kwargs)
-        data_repository = os.environ.get("EXASIM_DATA_REPOSITORY")
-        system_name = os.environ.get("EXASIM_SYSTEM_NAME")
-        func_args_str = "_".join([f"{k}={v}" for k, v in kwargs.items()])
-        # TODO add experiment name
-        fig.savefig(
-            f"{data_repository}/figs/{system_name}/{func.__name__}_{func_args_str}.png",
-            bbox_inches="tight",
-        )
-    except Exception as e:
-        print("failed to plot", func.__name__, e)
+def normalized_plots(jobs: list, case: str, append_to_fn: str = ""):
+    """plot figures that need some kind of normalisation"""
+
+    annotated_query = eph.signac_conversion.build_annotated_query()
+    df = eph.signac_conversion.from_query_to_df(
+        jobs,
+        query=annotated_query,
+        index=["nCells", "solver", "executor", "nSubDomains"],
+    )
+    base_query = [eph.helpers.query(idx="executor", val="CPU", op=eph.helpers.equal())]
+
+    speed_up_over_nCells = eph.plot_funcs.ax_handler_wrapper(
+        "Number Cells [#]", "Speedup linear solver [-]"
+    )
+    eph.plot_funcs.dispatch_plot(
+        eph.plot_funcs.facets_relative_to_base_over_x,
+        case,
+        speed_up_over_nCells,
+        append_to_fn,
+        df,
+        "MPI ranks: {}",
+        base_query=base_query,
+        x="nCells",
+        y="SolveP",
+        facet="nSubDomains",
+    )
+
+    speed_up_over_nCells = eph.plot_funcs.ax_handler_wrapper(
+        "Number Cells [#]", "Speedup time step [-]"
+    )
+    eph.plot_funcs.dispatch_plot(
+        eph.plot_funcs.facets_relative_to_base_over_x,
+        case,
+        speed_up_over_nCells,
+        append_to_fn,
+        df,
+        "MPI ranks: {}",
+        base_query=base_query,
+        x="nCells",
+        y="TimeStep",
+        facet="nSubDomains",
+    )
+
+    speed_up_over_nCells = eph.plot_funcs.ax_handler_wrapper(
+        "Number Cells [#]", "Relative number of iterations [-]"
+    )
+    eph.plot_funcs.dispatch_plot(
+        eph.plot_funcs.facets_relative_to_base_over_x,
+        case,
+        speed_up_over_nCells,
+        append_to_fn,
+        df,
+        "MPI ranks: {}",
+        base_query=base_query,
+        x="nCells",
+        y="iter_p",
+        facet="nSubDomains",
+    )
 
 
-def facets_relative_to_base_over_x(jobs, legend, base_query, x, y, facet):
-    """faceted plot normalised values over x
+def unnormalized_plots(jobs: list, case: str, append_to_fn: str = ""):
+    """plot figures that need some kind of normalisation"""
 
-    Returns:
-     - the figure
-     - the axes
-    """
     annotated_query = eph.signac_conversion.build_annotated_query()
     df = eph.signac_conversion.from_query_to_df(
         jobs,
@@ -38,128 +80,181 @@ def facets_relative_to_base_over_x(jobs, legend, base_query, x, y, facet):
         index=["nCells", "solver", "executor", "nSubDomains"],
     )
 
-    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(8, 5), sharey=True)
+    queries = {"PCG": [eph.helpers.query("solver", "PCG", eph.helpers.equal())]}
 
-    labels = []
-    # generate over different partitionings
-    # get base_ranks TODO find a generic way to do this
+    gko_executor = os.environ.get("GINKGO_EXECUTOR")
+    gko_mask = eph.helpers.idx_query_mask(
+        df,
+        [eph.helpers.query(idx="executor", val=gko_executor, op=eph.helpers.equal())],
+    )
 
-    base_query_mask = eph.helpers.idx_query_mask(df, base_query)
-    not_base_query_mask = np.logical_not(base_query_mask)
+    gko_ranks = set(df[gko_mask].index.get_level_values("nSubDomains"))
 
-    # get available facets for non base case
-    facet_values = set(df[not_base_query_mask].index.get_level_values(facet))
-
-    for facet_value in facets_values:
-        # compute individual speed up
-        # pre filter DataFrame to contain either base or facet values
-        filtered_df = df[
-            (df.index.get_level_values(facet) == facet_value) | base_query_mask
+    queries_subDomains = {
+        "GKOCG - {} ranks".format(ranks): [
+            eph.helpers.query("solver", "GKOCG", eph.helpers.equal()),
+            eph.helpers.query("nSubDomains", ranks, eph.helpers.equal()),
         ]
+        for ranks in gko_ranks
+    }
 
-        speedup = eph.helpers.compute_speedup(
-            filtered_df,
-            base_query,
-            ignore_indices=[facet],
-            drop_indices=["solver"],
+    queries_subDomains.update(queries)
+
+    speed_up_over_nCells = eph.plot_funcs.ax_handler_wrapper(
+        "Number Cells [#]", "Time [ms]"
+    )
+    eph.plot_funcs.dispatch_plot(
+        eph.plot_funcs.facets_over_x,
+        case,
+        speed_up_over_nCells,
+        append_to_fn,
+        df,
+        "{}",
+        queries_subDomains,
+        x="nCells",
+        y="SolveP",
+    )
+
+    speed_up_over_nCells = eph.plot_funcs.ax_handler_wrapper(
+        "Number Cells [#]", "Iterations [#]"
+    )
+    eph.plot_funcs.dispatch_plot(
+        eph.plot_funcs.facets_over_x,
+        case,
+        speed_up_over_nCells,
+        append_to_fn,
+        df,
+        "{}",
+        queries_subDomains,
+        x="nCells",
+        y="iter_p",
+    )
+
+
+def simple_break_down(jobs, case, append_to_fn: str = ""):
+    """the basic break down the solver annotations without OGL data"""
+
+    query = eph.signac_conversion.build_annotated_query()
+    df = eph.signac_conversion.from_query_to_df(
+        jobs, query, index=["nCells", "solver", "executor", "nSubDomains"]
+    )
+
+    # same ranks different resolution
+    # NOTE this is valid for repartitoned cases
+    # for other cases number of nodes should be considered
+    cpu_mask = eph.helpers.idx_query_mask(
+        df, [eph.helpers.query(idx="executor", val="CPU", op=eph.helpers.equal())]
+    )
+
+    cpu_ranks = list(set(df[cpu_mask].index.get_level_values("nSubDomains")))
+
+    filtered_df = df[
+        eph.helpers.idx_query_mask(
+            df,
+            [
+                eph.helpers.query(
+                    idx="nSubDomains", val=cpu_ranks[0], op=eph.helpers.equal()
+                )
+            ],
         )
+    ]
+    filtered_df.index = filtered_df.index.droplevel("nSubDomains")
 
-        # remove reference values
-        speedup = eph.helpers.idx_not_query(speedup, base_query)
+    # drop columns that are irelevant
+    filtered_df = filtered_df.drop(
+        columns=["TimeStep", "iter_p", "iter_Ux", "final_p", "final_Ux"]
+    )
 
-        # keep only x as indices to keep plot axis clean
-        speedup = eph.helpers.idx_keep_only(speedup, x)
+    break_down_over_nCells = eph.plot_funcs.ax_handler_wrapper(
+        y_label="Time [ms]", getter=lambda x: x[0]
+    )
+    eph.plot_funcs.dispatch_plot(
+        eph.plot_funcs.bar_facet,
+        case,
+        break_down_over_nCells,
+        f"_ranks{cpu_ranks[0]}" + append_to_fn,
+        filtered_df,
+        facet="nCells",
+    )
 
-        speedup[y].plot()
-        labels.append(legend.format(part))
 
-    axes.legend(labels)
+def simple_break_down_rel(jobs: list, case: str, append_to_fn: str = ""):
+    """the basic break down the solver annotations without OGL data
 
-    return fig, axes
+    NOTE Computes ratio based on single execution, thus if p is computed
+    several  times per time step, the total ratio is underestimated
+    """
+
+    query = eph.signac_conversion.build_annotated_query()
+    # NOTE if pressure is com
+    df = eph.signac_conversion.from_query_to_df(
+        jobs, query, index=["nCells", "solver", "executor", "nSubDomains"]
+    )
+
+    # same ranks different resolution
+    # NOTE this is valid for repartitoned cases
+    # for other cases number of nodes should be considered
+    cpu_mask = eph.helpers.idx_query_mask(
+        df, [eph.helpers.query(idx="executor", val="CPU", op=eph.helpers.equal())]
+    )
+
+    cpu_ranks = list(set(df[cpu_mask].index.get_level_values("nSubDomains")))
+
+    filtered_df = df[
+        eph.helpers.idx_query_mask(
+            df,
+            [
+                eph.helpers.query(
+                    idx="nSubDomains", val=cpu_ranks[0], op=eph.helpers.equal()
+                )
+            ],
+        )
+    ]
+    filtered_df.index = filtered_df.index.droplevel("nSubDomains")
+
+    # drop columns that are irelevant
+    filtered_df = filtered_df.div(filtered_df["TimeStep"], axis=0)
+    filtered_df = filtered_df.drop(
+        columns=["TimeStep", "iter_p", "iter_Ux", "final_p", "final_Ux"]
+    )
+
+    break_down_over_nCells = eph.plot_funcs.ax_handler_wrapper(
+        y_label="Time [ms]", getter=lambda x: x[0]
+    )
+    eph.plot_funcs.dispatch_plot(
+        eph.plot_funcs.bar_facet,
+        case,
+        break_down_over_nCells,
+        f"_ranks{cpu_ranks[0]}_rel" + append_to_fn,
+        filtered_df,
+        facet="nCells",
+    )
 
 
-def simple_break_down_rel(jobs, field):
+def gko_break_down(jobs: list, field: str, case: str, append_to_fn: str = ""):
     """the basic break down the solver annotations without OGL data"""
 
-    query = build_annotated_query_rel()
-    df, grouped, group_keys = from_query_to_grouped_df(jobs, query, "solver", "nCells")
-
-    fig, axes = plt.subplots(
-        nrows=1, ncols=len(group_keys), figsize=(12, 4), sharey=True
+    query = eph.signac_conversion.build_gko_query(field)
+    df = eph.signac_conversion.from_query_to_df(
+        jobs, query, index=["nCells", "solver", "executor", "nSubDomains"]
     )
 
-    axes[0].set_ylabel("Time [%]")
-
-    for key, ax in zip(group_keys, axes.flatten()):
-        group = grouped.get_group(key)
-        group = group.sort_index()
-
-        ax = group.drop(columns=["nCells"]).plot.bar(ax=ax, stacked=True, legend=False)
-        ax.set_title(f"nCells = {key}")
-
-    h, l = ax.get_legend_handles_labels()
-    l = [_.replace("_rel", "").replace(":", "") for _ in l]
-
-    ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
-    return fig
-
-
-def simple_break_down(jobs, field):
-    """the basic break down the solver annotations without OGL data"""
-
-    query = build_annotated_query()
-    group_key = "nCells"
-    sub_group = "solver"
-    df, grouped, group_keys = from_query_to_grouped_df(
-        jobs, query, sub_group, group_key
+    break_down_over_nCells = eph.plot_funcs.ax_handler_wrapper(
+        y_label="Time [ms]", getter=lambda x: x[0]
     )
 
-    df = df[df["nSubDomains"] == 32]
+    # since we look at gko cases on a single machine all
+    # executor should be the same
+    df.index = df.index.droplevel("executor")
 
-    fig, axes = plt.subplots(
-        nrows=1, ncols=len(group_keys), figsize=(12, 4), sharey=True
+    eph.plot_funcs.dispatch_plot(
+        eph.plot_funcs.bar_facet,
+        case,
+        break_down_over_nCells,
+        f"_gko" + append_to_fn,
+        df,
+        facet="nCells",
     )
-
-    axes[0].set_ylabel("Time [ms]")
-
-    #
-    for key, ax in zip(group_keys, axes.flatten()):
-        group = grouped.get_group(key)
-        group = group.sort_index()
-
-        ax = group.drop(columns=[group_key]).plot.bar(ax=ax, stacked=True, legend=False)
-        ax.set_title(f"{group_key} = {key}")
-
-    h, l = ax.get_legend_handles_labels()
-    l = [_.replace("_rel", "").replace(":", "") for _ in l]
-    ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
-    return fig
-
-
-def gko_break_down_over_x(jobs, field, x):
-    """the basic break down the solver annotations without OGL data"""
-
-    query = build_gko_query(field)
-    df, grouped, group_keys = from_query_to_grouped_df(jobs, query, x, "nCells")
-
-    fig, axes = plt.subplots(
-        nrows=1, ncols=len(group_keys), figsize=(12, 4), sharey=True
-    )
-
-    axes[0].set_ylabel("Time [ms]")
-
-    for key, ax in zip(group_keys, axes.flatten()):
-        group = grouped.get_group(key)
-        group = group.sort_index()
-
-        ax = group.drop(columns=["nCells"]).plot.bar(ax=ax, stacked=True, legend=False)
-        ax.set_title(f"nCells = {key}")
-
-    h, l = ax.get_legend_handles_labels()
-    l = [_.replace("_rel", "").replace(":", "") for _ in l]
-
-    ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
-    return fig
 
 
 def gko_break_down_over_runs(jobs, field):
@@ -216,34 +311,6 @@ def gko_break_down_over_runs(jobs, field):
 
     h, l = ax.get_legend_handles_labels()
     l = [_.replace("_rel", "").replace(":", "") for _ in l]
-
-    ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
-    return fig
-
-
-def time_over_cells(jobs, field):
-    query = build_annotated_query()
-    df, grouped, group_keys = from_query_to_grouped_df(jobs, query, x, "nCells")
-
-    df = df[df["nSubDomains"] == 32]
-
-    grouped = df.groupby("solver")
-    linestyles = ["-", "-.", ":"]
-    group_keys = grouped.groups.keys()
-
-    fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(12, 4), sharey=True)
-    axes.set_ylabel("Time [ms]")
-
-    for key, lt in zip(group_keys, linestyles):
-        group = grouped.get_group(key)
-        group = group.sort_index()
-        ax = group.plot(ax=axes, legend=False, linestyle=lt, marker="x")
-
-    h, ls = ax.get_legend_handles_labels()
-    l = []
-    for k in group_keys:
-        for _ in ["MomentumPredictor"]:
-            l.append(f"{_} {k}")
 
     ax.legend(h, l, loc="center left", bbox_to_anchor=(1.0, 0.5))
     return fig
