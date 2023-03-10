@@ -48,7 +48,10 @@ def call(jobs):
         "TimeStep",
     ]
 
-    CombinedKeys = SolverAnnotationKeys + OGLAnnotationKeys
+    pKeys = [c + p for c in col_iter for p in p_steps]
+    UKeys = [c + p for c in col_iter for p in U_components]
+
+    CombinedKeys = SolverAnnotationKeys + OGLAnnotationKey + pKeys + UKeys
 
     SolverAnnotations = [
         LogKey(search, col_time, append_search_to_col=True)
@@ -107,7 +110,9 @@ def call(jobs):
                 except Exception as e:
                     print(e)
 
+            # write iters to job.doc
+
             job.doc["obr"]["nCells"] = cache.search_parent(job, "nCells")
-            job.doc["obr"]["nSubDomains"] = int(of_case.decomposeParDict.get(
-                "numberOfSubdomains"
-            ))
+            job.doc["obr"]["nSubDomains"] = int(
+                of_case.decomposeParDict.get("numberOfSubdomains")
+            )
