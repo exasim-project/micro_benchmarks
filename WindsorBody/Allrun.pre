@@ -11,18 +11,18 @@ set -e
 # blockmesh and feature extraction
 getMesh=false                       # Download mesh files 
 devFlowField=false                  # Download restart time to setup case with a developed DDES-field
-prepareCase=false                   # Setup case in new run directory
-duplicateCase=true                  # copy/duplicate case domain nCaseCopies times for weak scaling benchmarking
+prepareCase=true                   # Setup case in new run directory
+duplicateCase=false                  # copy/duplicate case domain nCaseCopies times for weak scaling benchmarking
 nCaseCopies=3
 
 ### directories
 logDir="logFiles"
-runDir="run_2"
+runDir="Test/run_solverSettings_4"
 
 ### number procs for decomposition
-nProcs=16
+nProcs=8
 
-use_control="system/controlDict.DDES.avg"
+use_control="system/controlDict.RANS"
 use_decompose="-decomposeParDict system/decomposeParDict"
 use_parallel="-parallel $use_decompose"
 
@@ -87,7 +87,7 @@ if $prepareCase; then
     echo "Prepare case folder ..."
     [ -d "${runDir}" ] && { echo "Directory $runDir already exists."; exit 1; }
     cp -a basicSetup $runDir
-    ln -s scripts/ $runDir/scripts/
+    ln -s -r ./assets/scripts/ $runDir/scripts
     cd $runDir
     cp system/fvSchemes.pre system/fvSchemes
     cp system/fvSolution.RANS system/fvSolution

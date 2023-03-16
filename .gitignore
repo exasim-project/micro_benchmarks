@@ -81,5 +81,12 @@ doc/Doxygen/DTAGS
 # Ignore the test directory
 /tutorialsTest
 
+# Ignore the test directories
+*/Test
+
+# Ignore grid and 0 directory of WindsorBody-case
+WindsorBody/basicSetup*/constant/polyMesh
+WindsorBody/basicSetup*/0/
+
 # Python cache
 **/__pycache__/
