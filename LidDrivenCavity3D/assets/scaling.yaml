@@ -1,13 +1,15 @@
 case:
-    type: CaseOnDisk
+    type: GitRepo
     solver: pisoFoam
-    origin: ${{env.LidDrivenCavity}}/S
+    url: https://develop.openfoam.com/committees/hpc.git
+    folder: Lid_driven_cavity-3d/S 
+    cache_folder: ${{env.LidDrivenCavity}}/S
     post_build:
       # NOTE Need to create fvSolution first
       - shell: cp system/fvSolution.fixedNORM system/fvSolution
       - controlDict:
            writeFormat: binary
-           libs: ["libOGL.so"]
+           libs: ("libOGL.so", "libpetscFoam.so")
       - fvSolution:
             set: solvers/p
             clear: True
@@ -16,19 +18,7 @@ case:
             maxIter: 3000
 variation:
     ${{include.blockMesh.yaml}}
-    variation:
-      - operation: fvSolution
-        schema: "linear_solver/{solver}{preconditioner}{executor}"
-        values:
-          - set: solvers/p
-            preconditioner: none
-            solver: GKOCG
-            forceHostBuffer: 1
-            verbose: 1
-            executor: ${{env.GINKGO_EXECUTOR}}
-          - set: solvers/p
-            solver: PCG
-            preconditioner: none
-            executor: CPU
+     variation:
+       ${{include.solver.yaml}}
         variation:
-            ${{include.decomposition.yaml}}
+             ${{include.decomposition.yaml}}

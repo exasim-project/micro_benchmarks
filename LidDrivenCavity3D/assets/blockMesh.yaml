@@ -17,7 +17,7 @@
       controlDict:
         deltaT: 0.00025
         endTime: 0.005
-    - if: ${{ env.OBR_HUGE_CASES == True }}
+    - if: ${{  ${{env.OBR_HUGE_CASES}} == True }}
       modifyBlock: "(100 100 100)->(500 500 500)"
       controlDict:
         deltaT: 0.0002

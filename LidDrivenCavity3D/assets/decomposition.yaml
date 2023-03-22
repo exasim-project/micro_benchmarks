@@ -18,20 +18,31 @@
   schema: "decompose_GPU_repartition/{method}_{numberSubDomains}"
   values:
     - method: simple
-      numberSubDomains: ${{ 0.25 * ${{env.NGPUS}} * ${{env.NCPU_PER_GPU}} }}
+      numberSubDomains: ${{ 0.25 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
       fvSolution:
         set: solvers/p
         ranksPerGPU: ${{ 0.25 * ${{env.NCPUS_PER_GPU}} }}
     - method: simple
-      numberSubDomains: ${{ 0.5 * ${{env.NGPUS}} * ${{env.NCPU_PER_GPU}} }}
+      numberSubDomains: ${{ 0.5 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
       fvSolution:
         set: solvers/p
         ranksPerGPU: ${{ 0.5 * ${{env.NCPUS_PER_GPU}} }}
     - method: simple
-      numberSubDomains: ${{ 1.0 * ${{env.NGPUS}} * ${{env.NCPU_PER_GPU}} }}
+      numberSubDomains: ${{ 1.0 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
       fvSolution:
         set: solvers/p
         ranksPerGPU: ${{ 1.0 * ${{env.NCPUS_PER_GPU}} }}
+  parent:
+    executor: ${{env.GINKGO_EXECUTOR}}
+- operation: decomposePar
+  schema: "decompose_GPU_oversubscribe/{method}_{numberSubDomains}"
+  values:
+    - method: simple
+      numberSubDomains: ${{ 0.25 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
+    - method: simple
+      numberSubDomains: ${{ 0.5 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
+    - method: simple
+      numberSubDomains: ${{ 1.0 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
   parent:
     executor: ${{env.GINKGO_EXECUTOR}}
 - operation: decomposePar
