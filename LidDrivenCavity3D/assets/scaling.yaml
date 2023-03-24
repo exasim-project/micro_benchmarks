@@ -9,7 +9,7 @@ case:
       - shell: cp system/fvSolution.fixedNORM system/fvSolution
       - controlDict:
            writeFormat: binary
-           libs: ("libOGL.so", "libpetscFoam.so")
+           libs: ["libOGL.so", "libpetscFoam.so"]
       - fvSolution:
             set: solvers/p
             clear: True
