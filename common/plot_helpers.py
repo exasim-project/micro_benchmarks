@@ -3,11 +3,25 @@ from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
-from obr import signac_operations
+
+from obr.signac_wrapper.operations import query_to_dict
+from collections import defaultdict
 import os
 
 import exasim_plot_helpers as eph
 import numpy as np
+
+
+def group_jobs(jobs: list, keys: dict[list[list[str]]]) -> dict:
+    """groups a list of jobs into several groups"""
+    ret = defaultdict(list)
+    for group, query_set in keys.items():
+        for queries in query_set:
+            job_ids = query_to_dict(jobs, queries, strict=True)
+            job_ids = [job_.id for job_ in job_ids]
+            jobs_filt = [job for job in jobs if job.id in job_ids]
+            ret[group] += jobs_filt
+    return ret
 
 
 def normalized_plots(jobs: list, case: str, append_to_fn: str = ""):

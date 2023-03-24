@@ -1,10 +1,11 @@
-from Owls.LogFileParser import LogFile, LogKey
+from Owls.parser.LogFile import LogFile, LogKey
 from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 from collections import defaultdict
-from obr import signac_operations, OpenFOAMCase
+from obr.signac_wrapper.operations import JobCache
+from obr.OpenFOAM.case import OpenFOAMCase
 
 
 def call(jobs):
@@ -51,7 +52,7 @@ def call(jobs):
     pKeys = [c + p for c in col_iter for p in p_steps]
     UKeys = [c + p for c in col_iter for p in U_components]
 
-    CombinedKeys = SolverAnnotationKeys + OGLAnnotationKey + pKeys + UKeys
+    CombinedKeys = SolverAnnotationKeys + OGLAnnotationKeys + pKeys + UKeys
 
     SolverAnnotations = [
         LogKey(search, col_time, append_search_to_col=True)
@@ -62,7 +63,7 @@ def call(jobs):
     logKeys += SolverAnnotations
     logKeys += OGLAnnotations
 
-    cache = signac_operations.JobCache(jobs)
+    cache = JobCache(jobs)
 
     for job in jobs:
         solver = job.doc["obr"].get("solver")
@@ -72,7 +73,7 @@ def call(jobs):
             continue
 
         case_path = Path(job.path) / "case"
-        of_case = OpenFOAMCase.OpenFOAMCase(case_path, job)
+        of_case = OpenFOAMCase(case_path, job)
 
         # get latest log
         runs = job.doc["obr"][solver]
