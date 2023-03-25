@@ -15,7 +15,7 @@ case:
             clear: True
             tolerance: 1e-04
             relTol: 0
-            maxIter: 3000
+            maxIter: 5000
 variation:
     ${{include.blockMesh.yaml}}
      variation:
