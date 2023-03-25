@@ -49,6 +49,10 @@
   schema: "decompose_CPU/{method}_{numberSubDomains}"
   values:
     - method: simple
+      numberSubDomains: ${{ 0.25 * ${{env.NCPUS}} }}
+    - method: simple
+      numberSubDomains: ${{ 0.5 * ${{env.NCPUS}} }}
+    - method: simple
       numberSubDomains: ${{ 1 * ${{env.NCPUS}} }}
     - if: ${{ ${{env.NNODES}} >= 2 }}
       method: simple
