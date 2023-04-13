@@ -27,14 +27,14 @@ viscRatio           5.0;            // Turbulent viscosity ratio in domain
 Tu                  0.0026;         // Turbulence intensity in domain
 
 // Turbulence model:
-LESturbModel        kOmegaSSTDDES;  // Model for LES if used
-RASturbModel        kOmegaSST;      // Model for RANS simulations if used
+LESturbModel        SpalartAllmarasDDES;  // Model for LES if used
+RASturbModel        SpalartAllmaras;      // Model for RANS simulations if used
 deltaTurb           maxDeltaxyz;    // Selected delta formulation
 
 // Simulation parameters:
 dt                  5.0e-5;         // Timestep
-tAvg                0.3;            // Time when to start averaging (in s) - 0.05s approx. equal to 12 CTU
-tEnd                0.7;            // End time of simulation (in s)
+tAvg                1.5;            // Time when to start averaging (in s) - 0.05s approx. equal to 12 CTU
+tEnd                1.5;            // End time of simulation (in s) when started from an fully developed flowfield
 writeInterval_      100;            // Restart write interval
 nCores              16;             // Number of cores used for simulation
 

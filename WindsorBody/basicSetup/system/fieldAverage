@@ -7,6 +7,7 @@ fieldAverage
     libs ("libfieldFunctionObjects.so");
 
     writeControl    writeTime;
+    timeStart       0.1;
     enabled         true;
     // cleanRestart    false; //true;
     // Fields to be  averaged - runTime modifiable

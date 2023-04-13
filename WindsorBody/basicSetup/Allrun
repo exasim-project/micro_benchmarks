@@ -4,8 +4,8 @@
 ### Upstream CFD, 2022
 
 #SBATCH --job-name "WP2_WindsorBody_Testing"
-#SBATCH --ntasks=128
-#SBATCH --time=1-00:00:00
+#SBATCH --ntasks=96
+#SBATCH --time=2-00:00:00
 #SBATCH --partition=compute
 #SBATCH --mail-type=NONE
 #SBATCH --account=bmbf_2022_EXASIM
@@ -54,7 +54,7 @@ parEx="srun"
 
 module load gnu/11
 module load openmpi/3
-module load OpenFOAM/v2206
+module load OpenFOAM/v2212
 
 . ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions
 

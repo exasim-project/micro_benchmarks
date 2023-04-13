@@ -61,6 +61,11 @@ SIMPLE
 {
     nNonOrthogonalCorrectors 0;
     consistent yes;
+    residualControl
+    {
+        p                       1e-4;
+        "(U|k|epsilon|omega)"   1e-5;
+    }
 }
 
 potentialFlow

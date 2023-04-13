@@ -55,7 +55,9 @@ snGradSchemes
 
 wallDist
 {
-    method          meshWave;
+    //method          meshWave;
+    method          exactDistance;       // exactDistance recommended for SA Model
+    updateInterval  0;
 }
 
 

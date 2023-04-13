@@ -19,8 +19,8 @@ solvers
     "p|pcorr"
     {
         solver          GAMG;
-        tolerance       1e-99;
-        relTol          0.1;
+        tolerance       0;
+        relTol          0.01;
         smoother        GaussSeidel;
         nCellsInCoarsestLevel 50;
         minIter         1;
@@ -43,12 +43,12 @@ solvers
         }
     }
 
-    "(rho.*|U.*|k.*|omega.*|nuTilda.*|h.*)"
+    "(U.*|k.*|omega.*|nuTilda.*)"
     {
         solver          PBiCGStab;
         preconditioner  DILU;
-        tolerance       1e-99;
-        relTol          0.001;
+        tolerance       0;
+        relTol          0.1;
         minIter         1;
     }
 
@@ -65,10 +65,25 @@ potentialFlow
 
 PIMPLE
 {
-    nOuterCorrectors           10;      // max. no. iterations per time step
+    nOuterCorrectors           30;      // max. no. iterations per time step
     nCorrectors                1;
     nNonOrthogonalCorrectors   0;
     finalOnLastPimpleIterOnly  true;
+    turbOnFinalIterOnly        true;  // Need to implement switch to adjust turbVariableFinal tolerances if used,
+
+    residualControl
+    {
+        p
+        {
+            tolerance 0;
+            relTol    1e-1;
+        }
+        U
+        {
+            tolerance 0;
+            relTol    1e-3;
+        }
+    }
 }
 
 relaxationFactors
@@ -79,10 +94,9 @@ relaxationFactors
     }
     equations
     {
-        "U.*"                0.7;
-        "(k.*|omega.*)"      0.7;
-        "(nuTilda.*)"        0.7;
-        "(h.*)"              0.7;
+        "(U|UFinal)"                      0.7;
+        "(k|epsilon|omega|nuTilda)"       1;
+        "(k|epsilon|omega|nuTilda)Final"  1;
     }
 }
 

@@ -1,0 +1,21 @@
+changes relative to basicSetup (15.03.2023)
+
+changed OF version: v2206                       -> v2212
+
+fvSchemes.DDES
+    div(phi,U) scheme2: linearUpwind limited    -> linearUpwindV  grad(U)
+    removed schemes for div(phi,K) div(phi,h) div(phid,p) and div(div(phi,U))
+    wallDist: meshWave                          -> exactDistance
+
+caseDefinition
+    turbulenceModel: kOmegaSST                  -> SpalartAllmaras
+
+decomposerParDict:
+    method: kahip                               -> hierarchical
+
+Add decomposerParDict.deco for deomposition with method kahip
+
+fvSolution.DDES
+    p relTol: 0.1                               -> 0.01
+    p relTol: 0.001                             -> 0.1
+    introduced residual control for p and U

@@ -21,7 +21,7 @@ numberOfSubdomains  $nCores;
 
 // note: kahip decomposition can not be used in conjunction with new wall
 //       distance method "exactDistance" use hierachical instead
-method              hierarchical; //hierarchical;
+method              kahip; //hierarchical;
 
 hierarchicalCoeffs
 {
