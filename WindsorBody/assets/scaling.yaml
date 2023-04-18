@@ -7,7 +7,7 @@ case:
       - shell: cp system/fvSchemes.RANS system/fvSchemes
       - controlDict:
            writeFormat: binary
-           libs: ("libOGL.so")
+           libs: ["libOGL.so"]
            endTime: 50.0
 variation:
   - operation: shell
@@ -17,33 +17,6 @@ variation:
       - shell: rm -rf 0
       - shell: mv 0.orig 0/
     variation:
-      - operation: fvSolution
-        schema: "linear_solver/{solver}{preconditioner}{executor}"
-        values:
-          - set: solvers/U
-            preconditioner: BJ
-            solver: GKOBiCGStab
-            forceHostBuffer: "true"
-            maxIter: 2000
-            verbose: 1
-            ranksPerGPU: ${{env.NCPUS_PER_GPU}}
-            executor: ${{env.GINKGO_EXECUTOR}}
-          - set: solvers/p
-            solver: GKOCG
-            preconditioner: BJ
-            forceHostBuffer: "true"
-            maxIter: 2000
-            verbose: 1
-            ranksPerGPU: ${{env.NCPUS_PER_GPU}}
-            executor: ${{env.GINKGO_EXECUTOR}}
-          - set: solvers/p
-            solver: GAMG
-            smoother: GaussSeidel
-            preconditioner: GaussSeidel
-            executor: CPU
-          - set: solvers/p
-            solver: PBiCGStab
-            preconditioner: DILU
-            executor: CPU
+      ${{include../../common/_solver.yaml}}
         variation:
-          ${{include.decomposition.yaml}}
+        ${{include../../common/_decomposition.yaml}}
