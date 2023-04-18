@@ -18,8 +18,8 @@ case:
             relTol: 0
             maxIter: 5000
 variation:
-    ${{include.blockMesh.yaml}}
-     variation:
-       ${{include.solver.yaml}}
-        variation:
-             ${{include.decomposition.yaml}}
+  ${{include._blockMesh.yaml}}
+    variation:
+    ${{include../../common/_solver.yaml}}
+      variation:
+      ${{include../../common/_decomposition.yaml}}
