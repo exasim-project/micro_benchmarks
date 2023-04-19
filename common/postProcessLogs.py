@@ -8,6 +8,12 @@ from obr.signac_wrapper.operations import JobCache
 from obr.OpenFOAM.case import OpenFOAMCase
 
 
+def append_update(d, key, updater):
+    prev_res = d.get(key, [])
+    prev_res.append(updater())
+    d[key] = prev_res
+
+
 def call(jobs):
     col_iter = ["init", "final", "iter"]
     col_time = ["time"]
@@ -86,34 +92,54 @@ def call(jobs):
             except Exception as e:
                 print(e)
 
+        job.doc["obr"]["nCells"] = cache.search_parent(job, "nCells")
+        job.doc["obr"]["nSubDomains"] = int(
+            of_case.decomposeParDict.get("numberOfSubdomains")
+        )
+
+        post_pro_dict = {}
+        post_pro_dict["numberRuns"] = len(runs)
+
         for i, run in enumerate(runs):
             log_path = case_path / run["log"]
 
             # parse logs for given keys
-            df = LogFile(logKeys).parse_to_df(log_path)
+            log_file = LogFile(logKeys)
+            try:
+                df = log_file.parse_to_df(log_path)
+            except Exception as e:
+                print("failed parsing log", log_path, e)
+                continue
+
+            # write information from header
+            append_update(post_pro_dict, "host", lambda: log_file.header.host)
 
             # write average times to job.doc
             for k in CombinedKeys:
                 try:
-                    prev_res = job.doc["obr"].get(k, [])
-                    val = df.iloc[1:].mean()["time_" + k]
-                    prev_res.append(val)
-                    job.doc["obr"][k] = prev_res
+                    append_update(
+                        post_pro_dict,
+                        "time_" + k,
+                        lambda: df.iloc[1:].mean()["time_" + k],
+                    )
                 except Exception as e:
                     print(e)
 
             # write average times step ratio to job.doc
             for k, rel in zip(CombinedKeys, ["time_TimeStep", "Ux: solve_multi_gpu"]):
                 try:
-                    prev_res = job.doc["obr"].get(k + "_rel", [])
-                    prev_res.append(df.iloc[1:].mean()[rel])
-                    job.doc["obr"][k + "_rel"] = prev_res
+                    append_update(
+                        post_pro_dict,
+                        k + "_rel",
+                        lambda: df.iloc[1:].mean()[k + "_rel"],
+                    )
                 except Exception as e:
                     print(e)
 
             # write iters to job.doc
 
-            job.doc["obr"]["nCells"] = cache.search_parent(job, "nCells")
-            job.doc["obr"]["nSubDomains"] = int(
-                of_case.decomposeParDict.get("numberOfSubdomains")
-            )
+            # check if run was completed
+            append_update(post_pro_dict, "completed", lambda: log_file.is_complete)
+
+        print(post_pro_dict)
+        job.doc["obr"]["postProcessing"] = post_pro_dict
