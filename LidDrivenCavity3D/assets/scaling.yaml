@@ -20,6 +20,6 @@ case:
 variation:
   ${{include._blockMesh.yaml}}
     variation:
-    ${{include../../common/_solver.yaml}}
-      variation:
-      ${{include../../common/_decomposition.yaml}}
+      ${{include../../common/_solver.yaml}}
+        variation:
+          ${{include../../common/_decomposition.yaml}}
