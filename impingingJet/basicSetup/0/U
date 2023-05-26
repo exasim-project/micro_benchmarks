@@ -1,0 +1,53 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  splitCyclic                           |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    location    "0";
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+        
+dimensions      [ 0 1 -1 0 0 0 0 ];
+        
+internalField   uniform ( 0 0 0 );
+        
+boundaryField
+{
+     topSolidWall
+     {
+        type            fixedValue;
+        value           uniform ( 0 0 0 );
+     }
+     bottomWall
+     {
+        type            fixedValue;
+        value           uniform ( 0 0 0 );
+     }
+     topInlet
+     {
+        type            groovyBC;
+	variables       "n=28.0;r=pow(pow(pos().x,2)+pow(pos().y,2),0.5);D=1.0;R=D/2;sigma=1.0/(0.02*R);A=0.7*sigma*exp(1);f=A*(R-r)*exp(-sigma*(R-r));u=-(n+2)*(1-pow(r/R,n))/n;uz=(u > 0)? 0 : u;rnd=(r>R)? 0 : 2*(rand()-0.5)*0.14;";
+        valueExpression "vector(0,0,uz+rnd*f)";
+	value           uniform ( 0 0 0);
+     }
+     sideFaces
+     {
+        type            inletOutlet;
+        value           uniform (0 0 0);
+        inletValue      uniform (0 0 0);
+
+//      type            advective;
+//	value           $internalField;
+     }
+}
+        
+        
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
