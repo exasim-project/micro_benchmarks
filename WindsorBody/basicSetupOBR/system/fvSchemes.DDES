@@ -57,12 +57,7 @@ divSchemes
     div(phi,epsilon)                    $turbulence;
     div(phi,nuTilda)                    $turbulence;
 
-    div(phi,h)                          bounded Gauss linearUpwind limited;
-    div(phi,K)                          bounded Gauss linearUpwind limited;
-
-    div(phid,p)                         Gauss linear;
     div((nuEff*dev2(T(grad(U)))))       Gauss linear;
-    div(div(phi,U))                     Gauss linear;
 }
 
 laplacianSchemes
@@ -89,8 +84,9 @@ fluxRequired
 
 wallDist
 {
-    method          meshWave;
+    method          exactDistance;
     nRequired       true;
+    updateInterval  0;
 }
 
 // ************************************************************************* //

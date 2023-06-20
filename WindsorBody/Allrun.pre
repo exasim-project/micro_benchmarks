@@ -10,18 +10,18 @@ set -e
 
 # blockmesh and feature extraction
 getMesh=false                       # Download mesh files 
-devFlowField=true                  # Download restart time to setup case with a developed DDES-field
+devFlowField=false                  # Download restart time to setup case with a developed DDES-field
 prepareCase=true                   # Setup case in new run directory
 duplicateCase=false                  # copy/duplicate case domain nCaseCopies times for weak scaling benchmarking
 nCaseCopies=3
 
 ### directories
 logDir="logFiles"
-runDir="Prod/run01_SA-DDES-BaselineEXASIM"
-baseSetup="basicSetup"
+runDir="Test/run_SST-DDES"
+baseSetup="basicSetupBP"
 
 ### number procs for decomposition
-nProcs=96
+nProcs=64
 
 use_control="system/controlDict.RANS"
 use_decompose="-decomposeParDict system/decomposeParDict.deco"

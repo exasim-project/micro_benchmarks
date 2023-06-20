@@ -40,27 +40,32 @@ solvers
 
     k
     {
-        solver          smoothSolver;
-        smoother        GaussSeidel;
-        tolerance       1e-8;
-        relTol          0.1;
-        nSweeps         1;
+        $U;
     }
 
     omega
     {
-        solver          smoothSolver;
-        smoother        GaussSeidel;
-        tolerance       1e-8;
-        relTol          0.1;
-        nSweeps         1;
+        $U;
+    }
+
+    nuTilda
+    {
+        $U;
     }
 }
 
 SIMPLE
 {
     nNonOrthogonalCorrectors 0;
-    consistent yes;
+    consistent               yes;
+    residualControl
+    {
+        p                       1e-8;
+        U                       1e-8;
+        k                       1e-8;
+        omega                   1e-8;
+        nuTilda                 1e-8;
+    }
 }
 
 potentialFlow
@@ -75,6 +80,7 @@ relaxationFactors
         U               0.9;
         k               0.7;
         omega           0.7;
+        nuTilda         0.7;
     }
 }
 

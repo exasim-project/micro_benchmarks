@@ -21,12 +21,12 @@ application       pimpleFoam;
 startFrom         latestTime;
 startTime         0;
 stopAt            endTime;
-endTime           $tEnd;
+endTime           1.5;
 
-deltaT            $dt;
+deltaT            5e-5;
 
 writeControl      timeStep; 
-writeInterval     $writeInterval_;
+writeInterval     100;
 
 purgeWrite        2;
 
@@ -50,19 +50,19 @@ libs
 
 functions
 {
-    #include "wallFields"
-    #include "volFields"
-    #include "calc_cp"
-    #include "fieldMinMax"
-    #include "solverInfo"
-    #include "forceCoeffs"
-    #include "probes/probes_1-Centerline"
-    #include "probes/probes_2-Glasshouse"
-    #include "probes/probes_3-Bumper"
-    #include "probes/probes_4-Base"
-    #include "probes/probes_reference"
-    #include "fieldAverage" 
-    #include "blendingFactor"
+    #include "outputDefs/wallFields"
+    #include "outputDefs/volFields"
+    #include "outputDefs/calc_cp"
+    #include "outputDefs/fieldMinMax"
+    #include "outputDefs/solverInfo"
+    #include "outputDefs/forceCoeffs"
+    #include "outputDefs/probes/probes_1-Centerline"
+    #include "outputDefs/probes/probes_2-Glasshouse"
+    #include "outputDefs/probes/probes_3-Bumper"
+    #include "outputDefs/probes/probes_4-Base"
+    #include "outputDefs/probes/probes_reference"
+    #include "outputDefs/fieldAverage" 
+    #include "outputDefs/blendingFactor"
 }
 
 // ************************************************************************* //

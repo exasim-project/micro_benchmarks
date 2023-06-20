@@ -55,6 +55,15 @@ solvers
         relTol          0.1;
         nSweeps         1;
     }
+
+    nuTilda
+    {
+        solver          smoothSolver;
+        smoother        GaussSeidel;
+        tolerance       1e-8;
+        relTol          0.1;
+        nSweeps         1;
+    }
 }
 
 SIMPLE
@@ -64,7 +73,7 @@ SIMPLE
     residualControl
     {
         p                       1e-4;
-        "(U|k|epsilon|omega)"   1e-5;
+        "(U|k|epsilon|omega|nuTilda)"   1e-5;
     }
 }
 
@@ -80,6 +89,7 @@ relaxationFactors
         U               0.9;
         k               0.7;
         omega           0.7;
+        nuTilda         0.7;
     }
 }
 

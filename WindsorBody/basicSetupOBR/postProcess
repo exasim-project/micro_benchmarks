@@ -26,6 +26,8 @@ nProcs=`getInputParam nCores`
 parEx="srun"
 #parEx="mpirun -np $nProcs"
 
+. ../loadModules.sh
+
 use_control="system/controlDict.RANS"
 use_decompose="-decomposeParDict system/decomposeParDict"
 use_parallel="-parallel $use_decompose"
@@ -35,7 +37,6 @@ echo "Running ..."
 $parEx simpleFoam $use_parallel -postProcess -func yPlus -latestTime > $logDir/30_postProcessYPlus.log 2>&1 || exit 1
 $parEx simpleFoam $use_parallel -postProcess -func Q -latestTime > $logDir/31_postProcessQ.log 2>&1 || exit 1
 $parEx foamToEnsight $use_parallel -latestTime > $logDir/32_foamToEnsight.log 2>&1 || exit 1
-python3 ../assets/scripts/python-files/plotScript.py . > $logDir/33_plotScript.log 2>&1 || exit 1
 )
 echo
 

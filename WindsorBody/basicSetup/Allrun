@@ -52,9 +52,7 @@ TIMESTAMP=$(date "+%Y-%m-%d_%H-%M-%S")
 #parEx="mpirun -np $nProcs"
 parEx="srun"
 
-module load gnu/11
-module load openmpi/3
-module load OpenFOAM/v2212
+. ../loadModules.sh
 
 . ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions
 
