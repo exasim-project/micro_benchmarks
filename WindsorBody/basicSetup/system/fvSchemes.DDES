@@ -42,7 +42,7 @@ divSchemes
 
     div(phi,U)                          bounded Gauss DEShybrid
         linear                    // scheme 1
-        linearUpwindV grad(U)     // scheme 2
+        linearUpwind limited      // scheme 2
         delta                     // name of delta
         0.65                      // DES coefficient, typically = 0.65
         $UinfMag                  // Reference velocity scale
@@ -84,9 +84,9 @@ fluxRequired
 
 wallDist
 {
-    //method          meshWave;
-    method          exactDistance;       // exactDistance recommended for SA Model
+    method          exactDistance;
     nRequired       true;
     updateInterval  0;
 }
+
 // ************************************************************************* //

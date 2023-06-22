@@ -16,7 +16,7 @@ FoamFile
 
 solvers
 {
-    "p|pcorr"
+    p
     {
         solver          GAMG;
         tolerance       0;
@@ -24,13 +24,6 @@ solvers
         smoother        GaussSeidel;
         nCellsInCoarsestLevel 50;
         minIter         1;
-    }
-
-    "pFinal|pcorrFinal"
-    {
-        $p;
-        relTol          0.01;
-
         // Explicit specify solver for coarse-level correction to override
         // solution tolerance
         coarsestLevelCorr
@@ -43,7 +36,12 @@ solvers
         }
     }
 
-    "(U.*|k.*|omega.*|nuTilda.*)"
+    "pFinal|pcorr|pcorrFinal|Phi"
+    {
+        $p;
+    }
+
+    U
     {
         solver          PBiCGStab;
         preconditioner  DILU;
@@ -52,9 +50,9 @@ solvers
         minIter         1;
     }
 
-    Phi
+    "UFinal|k|kFinal|omega|omegaFinal|nuTilda|nuTildaFinal"
     {
-        $p;
+        $U;
     }
 }
 
@@ -70,8 +68,8 @@ PIMPLE
     nNonOrthogonalCorrectors   0;
     finalOnLastPimpleIterOnly  true;
     turbOnFinalIterOnly        true;  // Need to implement switch to adjust turbVariableFinal tolerances if used,
-
     residualControl
+    
     {
         p
         {
@@ -90,13 +88,19 @@ relaxationFactors
 {
     fields
     {
-        "p.*"                0.4;
+        p               0.4;
+        pFinal          0.4;
     }
     equations
     {
-        "(U|UFinal)"                      0.7;
-        "(k|epsilon|omega|nuTilda)"       1;
-        "(k|epsilon|omega|nuTilda)Final"  1;
+        U               0.7;
+        UFinal          0.7;
+        k               1;
+        kFinal          1;   
+        omega           1;
+        omegaFinal      1;
+        nuTilda         1;
+        nuTildaFinal    1;
     }
 }
 

@@ -17,15 +17,15 @@ FoamFile
 
 #include       "include/caseDefinition"
 
-numberOfSubdomains  $nCores;
+numberOfSubdomains  16;
 
 // note: kahip decomposition can not be used in conjunction with new wall
 //       distance method "exactDistance" use hierachical instead
-method              hierarchical; //hierarchical;
+method              kahip; //hierarchical;
 
 hierarchicalCoeffs
 {
-    n               (1 1 $nCores);
+    n               (1 1 $numberOfSubdomains);
     delta           0.001;
     order           xyz;
 }

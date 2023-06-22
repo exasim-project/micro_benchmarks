@@ -40,40 +40,31 @@ solvers
 
     k
     {
-        solver          smoothSolver;
-        smoother        GaussSeidel;
-        tolerance       1e-8;
-        relTol          0.1;
-        nSweeps         1;
+        $U;
     }
 
     omega
     {
-        solver          smoothSolver;
-        smoother        GaussSeidel;
-        tolerance       1e-8;
-        relTol          0.1;
-        nSweeps         1;
+        $U;
     }
 
     nuTilda
     {
-        solver          smoothSolver;
-        smoother        GaussSeidel;
-        tolerance       1e-8;
-        relTol          0.1;
-        nSweeps         1;
+        $U;
     }
 }
 
 SIMPLE
 {
     nNonOrthogonalCorrectors 0;
-    consistent yes;
+    consistent               yes;
     residualControl
     {
-        p                       1e-4;
-        "(U|k|epsilon|omega|nuTilda)"   1e-5;
+        p                       1e-8;
+        U                       1e-8;
+        k                       1e-8;
+        omega                   1e-8;
+        nuTilda                 1e-8;
     }
 }
 

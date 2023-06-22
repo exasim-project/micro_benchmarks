@@ -1,2 +1,0 @@
-#!/bin/bash
-rm -r run_* slurm-*.out images/*.png images/*.pdf
