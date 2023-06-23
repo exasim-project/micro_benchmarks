@@ -1,0 +1,24 @@
+case:
+    type: CaseOnDisk
+    solver: pimpleFoam
+    origin: basicSetup 
+    post_build:
+      - shell: ${{yaml.location}}/scripts/getMesh.sh
+      - fvSolution:
+           uses: fvSolution.RANS
+      - controlDict:
+           uses: controlDict.RANS
+           writeFormat: binary
+           libs: ("libOGL.so")
+           endTime: 50.0
+variation:
+  - operation: shell
+    key: ${{yaml.location}}/scripts/concatenateDomain.sh
+    values: [-n1, -n2, -n3]
+    post_build:
+      - shell: rm -rf 0
+      - shell: mv 0.orig 0/
+    variation:
+      ${{include../../common/_pressure_solver.yaml}}
+        variation:
+          ${{include../../common/_simple_decomposition.yaml}}
