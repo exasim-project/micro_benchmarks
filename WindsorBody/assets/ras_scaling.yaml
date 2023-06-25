@@ -1,13 +1,13 @@
 case:
     type: CaseOnDisk
     solver: pimpleFoam
-    origin: basicSetup 
+    origin: ${{yaml.location}}/../basicSetup
+    uses:
+      - fvSolution: fvSolution.RANS
+      - controlDict: controlDict.RANS
     post_build:
       - shell: ${{yaml.location}}/scripts/getMesh.sh
-      - fvSolution:
-           uses: fvSolution.RANS
       - controlDict:
-           uses: controlDict.RANS
            writeFormat: binary
            libs: ("libOGL.so")
            endTime: 50.0
@@ -19,6 +19,6 @@ variation:
       - shell: rm -rf 0
       - shell: mv 0.orig 0/
     variation:
-      ${{include../../common/_pressure_solver.yaml}}
+      ${{include../../common/_precond_pressure_solver.yaml}}
         variation:
           ${{include../../common/_simple_decomposition.yaml}}
