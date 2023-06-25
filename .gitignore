@@ -92,3 +92,5 @@ WindsorBody/basicSetup*/0/
 
 # Python cache
 **/__pycache__/
+
+*.log
