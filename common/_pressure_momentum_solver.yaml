@@ -1,0 +1,13 @@
+- operation: fvSolution
+  schema: "linear_solver/{solver}{preconditioner}{executor}"
+  values:
+    - set: solvers/p
+      preconditioner: none
+      solver: GKOCG
+      forceHostBuffer: 1
+      verbose: 1
+      executor: ${{env.GINKGO_EXECUTOR}}
+    - set: solvers/p
+      solver: PCG
+      preconditioner: none
+      executor: CPU
