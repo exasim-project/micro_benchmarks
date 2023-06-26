@@ -94,3 +94,8 @@ WindsorBody/basicSetup*/0/
 **/__pycache__/
 
 *.log
+signac_*
+signac.rc
+workspace/
+view/
+*log

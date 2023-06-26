@@ -27,8 +27,8 @@ viscRatio           5.0;            // Turbulent viscosity ratio in domain
 Tu                  0.0026;         // Turbulence intensity in domain
 
 // Turbulence model:
-LESturbModel        spalartAllmarasDDES;  // Model for LES if used
-RASturbModel        spalartAllmaras;      // Model for RANS simulations if used
+LESturbModel        SpalartAllmarasDDES;  // Model for LES if used
+RASturbModel        SpalartAllmaras;      // Model for RANS simulations if used
 deltaTurb           maxDeltaxyz;    // Selected delta formulation
 
 // Simulation parameters:

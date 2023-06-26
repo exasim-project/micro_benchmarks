@@ -1,68 +1,26 @@
 case:
-    type: CaseOnDisk
+    type: GitRepo
     solver: pisoFoam
-    origin: ${{env.LidDrivenCavity}}/S
+    url: https://develop.openfoam.com/committees/hpc.git
+    folder: Lid_driven_cavity-3d/S 
+    cache_folder: ${{env.LidDrivenCavity}}/S
+    commit: f9594d16aa6993bb3690ec47b2ca624b37ea40cd  
     post_build:
       # NOTE Need to create fvSolution first
       - shell: cp system/fvSolution.fixedNORM system/fvSolution
       - controlDict:
            writeFormat: binary
-           libs: ["libOGL.so"]
+           libs: ["libOGL.so", "libpetscFoam.so"]
       - fvSolution:
             set: solvers/p
             clear: True
             tolerance: 1e-04
             relTol: 0
-            maxIter: 3000
-            #      - setKeyValuePair:
-            #file: constant/transportProperties
-            #foo: 3000
+            maxIter: 5000
 variation:
-  - operation: blockMesh
-    schema: "mesh/{modifyBlock}"
-    values:
-      - modifyBlock: "(100 100 100)->(100 100 100)"
-        controlDict:
-          deltaT: 0.001
-          endTime: 0.02
-      - modifyBlock: "(100 100 100)->(50 50 50)"
-        controlDict:
-          deltaT: 0.0005
-          endTime: 0.01
+  ${{include._blockMesh.yaml}}
     variation:
-      - operation: fvSolution
-        schema: "linear_solver/{solver}{preconditioner}{executor}"
-        values:
-          - set: solvers/p
-            preconditioner: none
-            solver: GKOCG
-            forceHostBuffer: 1
-            verbose: 1
-            executor: ${{env.GINKGO_EXECUTOR}}
-          - set: solvers/p
-            solver: PCG
-            preconditioner: none
-            executor: CPU
+      ${{include../../common/_pressure_solver.yaml}}
         variation:
-          - operation: decomposePar
-            schema: "decomposition_GPU/{method}_{numberSubDomains}"
-            values:
-              - method: simple
-                numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 2 * ${{env.NGPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
-            parent:
-              executor: ${{env.GINKGO_EXECUTOR}}
-          - operation: decomposePar
-            schema: "decomposition_CPU/{method}_{numberSubDomains}"
-            values:
-              - method: simple
-                numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 2 * ${{env.NGPUS}} }}
-              - method: simple
-                numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
-            parent:
-              executor: CPU
+          ${{include../../common/_simple_decomposition.yaml}}
+

@@ -14,7 +14,7 @@
 
 # set default number of concatenations
 nCaseCopies=2
-concatFields=false
+concatFields=true
 overwriteFlag='-overwrite'
 # --- get options
 while getopts ":n:f" opt; do
@@ -47,7 +47,7 @@ runDir=$(pwd)
 echo "Concatenate domain of case"
 echo "$runDir"
 echo
-timeDir=$(foamListTimes -latestTime)
+timeDir="0"
 if $concatFields && [[ ${timeDir} == '' ]]; then
     echo "No time directory present! Concatenation only effects mesh."
     concatFields=false
@@ -62,9 +62,6 @@ fi
 echo
 logDir="logFiles"
 mkdir -p $logDir
-cp system/fvSchemes.pre system/fvSchemes
-cp system/fvSolution.RANS system/fvSolution
-cp system/controlDict.RANS system/controlDict
 
 cd ..
 # --- create temporary directories with translated domain
@@ -124,6 +121,7 @@ do
     # change patch names in boundaryFields of constant directory
     sed -i "s/\bCFDWT_Right\b/CFDWT_Right_intern/g" ./constant/polyMesh/boundary
     # Merge "original" mesh with translated mesh
+    echo "mergeMeshse"
     mergeMeshes $overwriteFlag . ../$iTmpDir/ >> $logDir/02_mergeMeshes.log 2>&1 || exit 1
     # stitch the merged mesh on internal patch faces
     stitchMesh $overwriteFlag CFDWT_Right_intern CFDWT_Left_intern >> $logDir/03_stitchMesh.log 2>&1 || exit 1
@@ -132,11 +130,9 @@ do
     timeDir=$(foamListTimes -latestTime)
     rm ./$timeDir/meshPhi || rm ./0/meshPhi || true
 done
-# check mesh
-checkMesh > $logDir/05_checkMesh.log 2>&1 || exit 1
 
 if $concatFields; then
-    cp -a 0.orig/* $timeDir/
+    cp -a 0/* $timeDir/
     cd $timeDir/
     cp U U_0
     cp k k_0
