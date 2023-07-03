@@ -11,3 +11,8 @@
       solver: PCG
       preconditioner: none
       executor: CPU
+    - set: solvers/p
+      solver: GAMG
+      smoother: GaussSeidel
+      preconditioner: GaussSeidel
+      executor: CPU
