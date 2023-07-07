@@ -33,10 +33,49 @@ boundaryField
      }
      topInlet
      {
-        type            groovyBC;
-	variables       "n=28.0;r=pow(pow(pos().x,2)+pow(pos().y,2),0.5);D=1.0;R=D/2;sigma=1.0/(0.02*R);A=0.7*sigma*exp(1);f=A*(R-r)*exp(-sigma*(R-r));u=-(n+2)*(1-pow(r/R,n))/n;uz=(u > 0)? 0 : u;rnd=(r>R)? 0 : 2*(rand()-0.5)*0.14;";
-        valueExpression "vector(0,0,uz+rnd*f)";
-	value           uniform ( 0 0 0);
+    	type            codedFixedValue;
+    	value           uniform ( 0 0 0);
+
+    	// Name of generated boundary condition
+   	 redirectType    nonUniformRandomInlet;
+
+	 codeInclude
+        #{
+        	#include <cstdlib> 
+        #};
+
+        code
+        #{ 
+             const fvPatch& boundaryPatch = patch();     //select boundary patch
+             const vectorField& Cf = boundaryPatch.Cf(); //generic
+             vectorField& field = *this;                 //generic
+
+             const scalar n     =          28.0;     // steepness of the block profile
+             const scalar D     =           1.0;     // pipe diameter
+             const scalar R     =         0.5*D;     // pipe radius
+             const scalar sigma =  1.0/(0.02*R);     // 
+             const scalar A     =  0.7*sigma*exp(1.0);
+      
+             forAll(Cf, faceI) // loop over all the patch faces
+             {
+                const scalar x = Cf[faceI].x(); // x coordinate of the faces i
+                const scalar y = Cf[faceI].y(); // y coordinate of the faces i
+                const scalar r = pow(y*y + x*x,0.5); // compute radius
+                const scalar f = A*(R-r)*exp(-sigma*(R-r));
+                const scalar u = -(n+2)*(1-pow(r/R,n))/n;
+                const scalar uz = (u > 0)? 0 : u;
+		const scalar rndmax = RAND_MAX;
+		const scalar rnd = std::rand();
+	        const scalar ff  = (r>R)? 0 : 2.0*0.14*(rnd/rndmax-0.5);
+                
+                //Info << Foam::min() << nl << endl; 
+
+                field[faceI] = vector( 0, 0, f); // define velocity value on the face i
+             }
+
+        #};
+
+
      }
      sideFaces
      {
