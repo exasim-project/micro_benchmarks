@@ -1,0 +1,112 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| ========= | |
+| \\ / F ield | OpenFOAM: The Open Source CFD Toolbox |
+| \\ / O peration | Version: 2.2.0 |
+| \\ / A nd | Web: www.OpenFOAM.org |
+| \\/ M anipulation | |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+version 2.0;
+format ascii;
+class dictionary;
+object topoSetDict;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+actions
+(
+// 1) We make a copy of the patch topWall to two equal faceSets
+// 2) We subtract some parts of the respective faceSets to make an inlet and a 
+//    solid wall out of it
+
+// copy the topWall to a new faceSet called solidfaces
+{
+    name    solidFaces;
+    type    faceSet;
+    action  new;
+    source  patchToFace;
+    sourceInfo
+    {
+      patch topWall;
+    }
+  }
+
+// copy the topWall to a new faceSet called solidfaces
+{
+    name    inletFaces;
+    type    faceSet;
+    action  new;
+    source  patchToFace;
+    sourceInfo
+    {
+      patch topWall;
+    }
+  }
+
+// delete inlet aera from faceSet solidFaces
+{
+    name    solidFaces;
+    type    faceSet;
+    action  delete;
+    source  boxToFace;
+    sourceInfo
+     {
+      box (-0.5 -0.5 1.9) (0.5 0.5 2.1);
+     }
+  }
+
+// subtract solidFaces from topWall to get inletFaces
+{
+    name    inletFaces;
+    type    faceSet;
+    action  subtract;
+    source  faceToFace;
+    set     solidFaces;
+  }
+
+/*
+// delete all around inlet area from faceSet inletFaces
+{
+    name    inletFaces;
+    type    faceSet;
+    action  delete;
+    source  boxToFace;
+    sourceInfo
+     {
+      box (-10 -10 1.9) (-0.5 10 2.1);
+     }
+  }
+{
+    name    inletFaces;
+    type    faceSet;
+    action  delete;
+    source  boxToFace;
+    sourceInfo
+     {
+      box (0.5 -10 1.9) (100 10 2.1);
+     }
+  }
+{
+    name    inletFaces;
+    type    faceSet;
+    action  delete;
+    source  boxToFace;
+    sourceInfo
+     {
+      box (-10 -10 1.9) (10 -0.5 2.1);
+     }
+  }
+{
+    name    inletFaces;
+    type    faceSet;
+    action  delete;
+    source  boxToFace;
+    sourceInfo
+     {
+      box (-10 0.5 1.9) (10 10 2.1);
+     }
+  }
+*/
+); 

@@ -1,0 +1,115 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     pimpleFoam;
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         100000;
+
+deltaT          0.001;
+
+adjustTimeStep  yes;
+
+maxCo           0.5;
+
+maxDeltaT       0.05;
+
+writeControl    clockTime;
+
+writeInterval   10500;
+
+purgeWrite      5;
+
+writeFormat     binary;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+libs ( 
+	"libgroovyBC.so" 
+	"libAddBoundaryConditions.so"
+     ) ;
+
+OptimisationSwitches
+{
+    fileHandler collated;
+} 
+
+functions
+{
+    scalar1
+	{
+	type            scalarTransport;
+	libs ("libsolverFunctionObjects.so");
+	enabled true;
+	writeControl outputTime; // write scalar field results
+        fileHandler  collated;
+
+	field s;           //name of scalar field
+	nCorr 1;           //number of corrector loop
+	D     1.45105e-04; //difussion coefficient
+
+	log yes;
+	}
+
+    fieldAverage1
+    {
+        type            fieldAverage;
+        libs            (fieldFunctionObjects);
+        writeControl    writeTime;
+
+        fields
+        (
+            U
+            {
+                mean        on;
+                prime2Mean  on;
+                base        time;
+            }
+
+            p
+            {
+                mean        on;
+                prime2Mean  on;
+                base        time;
+            }
+
+            s
+            {
+                mean        on;
+                prime2Mean  on;
+                base        time;
+            }
+
+
+	);
+    }
+
+
+}
+// ************************************************************************* //
