@@ -10,6 +10,7 @@ def main():
     environ = dict(os.environ)
     version_checker(environ, "mpirun --version")
     version_checker(environ, "which mpirun")
+    version_checker(environ, "lscpu")
     pprint(environ)
 
 
