@@ -1,6 +1,5 @@
 case:
     type: CaseOnDisk
-    solver: pimpleFoam
     origin: ${{yaml.location}}/../basicSetup
     uses:
       - fvSolution: fvSolution.RANS
@@ -9,16 +8,16 @@ case:
       - shell: ${{yaml.location}}/scripts/getMesh.sh
       - controlDict:
            writeFormat: binary
-           libs: ("libOGL.so")
+           libs: ["libOGL.so", "libpetscFoam.so"]
            endTime: 50.0
 variation:
   - operation: shell
     key: ${{yaml.location}}/scripts/concatenateDomain.sh
-    values: [-n1, -n2, -n3]
+    values: [-n1, -n2, -n4, -n8]
     post_build:
       - shell: rm -rf 0
       - shell: mv 0.orig 0/
     variation:
-      ${{include../../common/_precond_pressure_solver.yaml}}
+      ${{include../../common/_simple_decomposition.yaml}}
         variation:
-          ${{include../../common/_simple_decomposition.yaml}}
+          ${{include../../common/_precond_pressure_solver.yaml}}

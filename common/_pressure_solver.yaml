@@ -4,7 +4,7 @@
     - set: solvers/p
       preconditioner: none
       solver: GKOCG
-      forceHostBuffer: 0
+      forceHostBuffer: ${{env.FORCE_HOST_BUFFER}}
       verbose: 1
       executor: ${{env.GINKGO_EXECUTOR}}
     - set: solvers/p

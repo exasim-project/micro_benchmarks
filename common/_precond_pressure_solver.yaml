@@ -1,10 +1,10 @@
 - operation: fvSolution
-  schema: "linear_solver/{solver}{preconditioner}{executor}"
+  schema: "linear_solver_p/{solver}{preconditioner}{executor}"
   values:
     - set: solvers/p
       preconditioner: BJ
       solver: GKOCG
-      forceHostBuffer: 0
+      forceHostBuffer: ${{env.FORCE_HOST_BUFFER}}
       verbose: 1
       maxIter: 5000
       executor: ${{env.GINKGO_EXECUTOR}}
@@ -12,3 +12,25 @@
       solver: PCG
       preconditioner: DIC
       executor: CPU
+    - set: solvers/p
+      solver: GAMG
+      smoother: GaussSeidel
+      preconditioner: GaussSeidel
+      executor: CPU
+  variation:
+    - operation: fvSolution
+      schema: "linear_solver_u/momentum_{solver}{executor}"
+      values:
+        - set: solvers/U
+          preconditioner: BJ
+          solver: GKOBiCGStab
+          forceHostBuffer: ${{env.FORCE_HOST_BUFFER}}
+          verbose: 1
+          executor: ${{env.GINKGO_EXECUTOR}}
+        - set: solvers/U
+          solver: smoothSolver
+          smoother: GaussSeidel
+          tolerance: 1e-8
+          relTol: 0.1
+          nSweeps: 1
+          executor: CPU
