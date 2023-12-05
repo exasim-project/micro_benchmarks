@@ -3,8 +3,7 @@
   common:
     method: simple
   values:
-    - 
-      numberOfSubdomains: ${{ 1 * ${{env.NGPUS}} }}
+    - numberOfSubdomains: ${{ 1 * ${{env.NGPUS}} }}
     - if: ${{ ${{env.NNODES}} >= 2 }}
       method: simple
       numberOfSubdomains: ${{ 2 * ${{env.NGPUS}} }}
