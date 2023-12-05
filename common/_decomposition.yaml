@@ -1,44 +1,42 @@
 - operation: decomposePar
-  schema: "decompose_GPU/{method}_{numberSubDomains}"
+  schema: "decompose_GPU/{method}_{numberOfSubdomains}"
+  common:
+    method: simple
   values:
-    - method: simple
-      numberSubDomains: ${{ 1 * ${{env.NGPUS}} }}
+    - 
+      numberOfSubdomains: ${{ 1 * ${{env.NGPUS}} }}
     - if: ${{ ${{env.NNODES}} >= 2 }}
       method: simple
-      numberSubDomains: ${{ 2 * ${{env.NGPUS}} }}
+      numberOfSubdomains: ${{ 2 * ${{env.NGPUS}} }}
     - if: ${{ ${{env.NNODES}} >= 4 }}
       method: simple
-      numberSubDomains: ${{ 4 * ${{env.NGPUS}} }}
+      numberOfSubdomains: ${{ 4 * ${{env.NGPUS}} }}
     - if: ${{ ${{env.NNODES}} >= 8 }}
       method: simple
-      numberSubDomains: ${{ 8 * ${{env.NGPUS}} }}
+      numberOfSubdomains: ${{ 8 * ${{env.NGPUS}} }}
   parent:
     executor: ${{env.GINKGO_EXECUTOR}}
 - operation: decomposePar
-  schema: "decompose_GPU_oversubscribe/{method}_{numberSubDomains}"
+  schema: "decompose_GPU_oversubscribe/{method}_{numberOfSubdomains}"
+  common:
+    method: simple
   values:
-    - method: simple
-      numberSubDomains: ${{ 0.25 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
-    - method: simple
-      numberSubDomains: ${{ 0.5 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
-    - method: simple
-      numberSubDomains: ${{ 1.0 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
+    - numberOfSubdomains: ${{ 0.25 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
+    - numberOfSubdomains: ${{ 0.5 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
+    - numberOfSubdomains: ${{ 1.0 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
   parent:
     executor: ${{env.GINKGO_EXECUTOR}}
 - operation: decomposePar
-  schema: "decompose_CPU/{method}_{numberSubDomains}"
+  schema: "decompose_CPU/{method}_{numberOfSubdomains}"
+  common:
+    method: simple
   values:
-    - method: simple
-      numberSubDomains: ${{ 0.25 * ${{env.NCPUS}} }}
-    - method: simple
-      numberSubDomains: ${{ 0.5 * ${{env.NCPUS}} }}
-    - method: simple
-      numberSubDomains: ${{ 1 * ${{env.NCPUS}} }}
+    - numberOfSubdomains: ${{ 0.25 * ${{env.NCPUS}} }}
+    - numberOfSubdomains: ${{ 0.5 * ${{env.NCPUS}} }}
+    - numberOfSubdomains: ${{ 1 * ${{env.NCPUS}} }}
     - if: ${{ ${{env.NNODES}} >= 2 }}
-      method: simple
-      numberSubDomains: ${{ 2 * ${{env.NCPUS}} }}
+      numberOfSubdomains: ${{ 2 * ${{env.NCPUS}} }}
     - if: ${{ ${{env.NNODES}} >= 4 }}
-      method: simple
-      numberSubDomains: ${{ 4 * ${{env.NCPUS}} }}
+      numberOfSubdomains: ${{ 4 * ${{env.NCPUS}} }}
   parent:
     executor: CPU

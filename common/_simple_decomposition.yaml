@@ -1,15 +1,13 @@
 - operation: decomposePar
-  schema: "decompose/{method}_{numberOfSubDomains}"
+  schema: "decompose/{method}_{numberOfSubdomains}"
+  common:
+      method: simple
   values:
-    - method: simple
-      numberOfSubDomains: ${{ 0.25 * ${{env.NCPUS}} }}
-    - method: simple
-      numberOfSubDomains: ${{ 0.5 * ${{env.NCPUS}} }}
-    - method: simple
-      numberOfSubDomains: ${{ 1 * ${{env.NCPUS}} }}
+    - numberOfSubdomains: ${{ 1.0 * ${{env.NGPUS}} }}
+    - numberOfSubdomains: ${{ 0.25 * ${{env.NCPUS}} }}
+    - numberOfSubdomains: ${{ 0.5 * ${{env.NCPUS}} }}
+    - numberOfSubdomains: ${{ 1 * ${{env.NCPUS}} }}
     - if: ${{ ${{env.NNODES}} >= 2 }}
-      method: simple
-      numberOfSubDomains: ${{ 2 * ${{env.NCPUS}} }}
+      numberOfSubdomains: ${{ 2 * ${{env.NCPUS}} }}
     - if: ${{ ${{env.NNODES}} >= 4 }}
-      method: simple
-      numberOfSubDomains: ${{ 4 * ${{env.NCPUS}} }}
+      numberOfSubdomains: ${{ 4 * ${{env.NCPUS}} }}
