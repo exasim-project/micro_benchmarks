@@ -1,0 +1,40 @@
+// Meshing paramaters:
+BLthickness         1500;                // Atmospheric boundary layer thickness
+x2yFactor           3;                   // Ratio of mean flow component Ux to Uy
+length_nBL          5;                   // Domain length in number of BLThicknesses
+zMin                0;                   // minimum z-coordinate (in m)
+zMax                4000;                // maximum z-coordinate (in m)
+resolution          32;
+
+// Flow parameters:
+Lref                10;                  // Reference turbulence length scale (in m)
+Uxref               17.5;                // reference velocity x-comp at inlet (in m/s)
+Uyref               0.0;                 // reference velocity y-comp at inlet (in m/s)
+Uzref               0.0;                 // reference velocity z-comp at inlet (in m/s)
+nuref               1.44e-05;            // reference molecular kinematic viscosity (in m^2/s)
+pref                0.0;                 // reference kinematic pressure at outlet (in m^2/s^2)
+roughness_z0        0.3;                 // Wall roughness parameter for ABL (in m)
+Tref                300.0;               // reference temperature (in K)
+
+// Turbulence model settings:
+turbModelRANS       kOmegaSST;          // turbulence model for RANS (SpalartAllmaras|kOmegaSST)
+turbModelSRS        kOmegaSSTDDES;      // turbulence model for SRS (SpalartAllmarasDDES|kOmegaSSTDDES|SpalartAllmarasIDDES|kOmegaSSTIDDES)
+deltaSRS            DeltaOmegaTilde;    // filter width formulation for SRS (DeltaOmegaTilde|IDDESDelta)
+viscRatio           5.0;                // Turbulent viscosity ratio at inlet (-)
+Tu                  0.1;                // Turbulence intensity at inlet
+
+// Simulation settings:
+dt                  2e-1;               // time step size (in s)
+tAvg                500;                // time when to start averaging (in s), 
+                                        // should be approx. after one flow through: 
+                                        // BLthickness*length_nBL/Uxref=1500*5/17.5=428.5 -> round up to N*dt*fieldOutInterval
+tEnd                2000;               // end time of simulation (in s)
+nIterRANS           20000;              // iterations for RANS
+fieldOutInterval    500;                // write interval for output of OpenFOAM fields
+decoMethod          kahip;              // method used for domain decomposition (scotch|kahip)
+nCores              192;                // number of cores used for simulation
+
+// Solver settings:
+solverRANS          buoyantBoussinesqSimpleFoam;           // steady-state solver for RANS
+solverSRS           buoyantBoussinesqPimpleFoam;           // transient solver for SRS
+

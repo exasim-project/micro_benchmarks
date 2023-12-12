@@ -1,0 +1,85 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+// Note: Used to define unsteady simulation outputs such as e.g. patches, 
+//       cutting planes, iso-surfaces
+
+cuttingLines
+{
+    #include        "${FOAM_CASE}/system/include/caseDefinition"
+    type                sets;
+    libs                ( "libsampling.so" );
+    writeControl        writeTime;
+
+    interpolationScheme cellPointFace;
+    setFormat           raw;
+
+    fields
+    (
+        U
+    );
+
+    sets
+    (
+        line_1
+        {
+            type        face;
+            axis        xyz;
+            start       (0.0 0.0 $zMin);
+            end         (0.0 0.0 $zMax);
+        }
+    );
+}
+
+STG_recovery
+{
+    #include        "${FOAM_CASE}/system/include/caseDefinition"
+    xMin                #eval "-0.5*$BLthickness*$length_nBL";                    // minimum x-coordinate (in m)
+    xMax                #eval "0.5*$BLthickness*$length_nBL";                     // maximum x-coordinate (in m)
+    yMin                #eval "(1/$x2yFactor)*$xMin";                            // minimum y-coordinate (in m)
+    yMax                #eval "(1/$x2yFactor)*$xMax";  
+    type                sets;
+    libs                ( "libsampling.so" );
+    writeControl        writeTime;
+
+    interpolationScheme cellPatchConstrained;
+    setFormat           raw;
+
+    fields
+    (
+        wallShearStress p_rgh
+    );
+
+    sets
+    (
+        patchEdge
+        {
+            type        patchEdge;
+            axis        xyz;
+
+            // List of patches to sample (into single file). Note: supports
+            // wildcards.
+            patches     (ww_lower);
+
+            // Surface type
+            surfaceType searchablePlane;
+            // Additional info for surface
+            planeType   pointAndNormal;
+            pointAndNormalDict
+            {
+                point   (0 0 $zMin);
+                normal  (#eval "-$yMax" $xMax $zMin);
+            }
+
+            // Sort point according to distance to origin
+            origin      ($xMin $yMin $zMin);
+        }
+    );
+}
+
+// ************************************************************************* //

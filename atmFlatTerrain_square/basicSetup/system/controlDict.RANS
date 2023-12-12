@@ -1,0 +1,62 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+libs            
+(
+    distributed 
+    atmosphericModels
+);
+
+application       $solverRANS;
+
+startFrom         latestTime;
+startTime         0;
+stopAt            endTime;
+
+endTime           $nIterRANS;
+deltaT            1;
+
+writeControl      timeStep;
+writeInterval     $fieldOutInterval;
+
+purgeWrite        2;   
+
+writeFormat       binary;
+writePrecision    15;
+writeCompression  off;
+
+timeFormat        general;
+timePrecision     6; 
+
+runTimeModifiable true;
+
+OptimisationSwitches
+{
+    fileModificationSkew  60;
+}
+
+functions
+{
+    #include "outputDefs/volFields"
+    #include "outputDefs/wallFields"
+    #include "outputDefs/solverInfo"
+    #include "outputDefs/fieldMinMax"
+    #include "outputDefs/sample"
+}
+
+// ************************************************************************* //

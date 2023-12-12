@@ -1,0 +1,110 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  5                                     |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version         2.0;
+    format          ascii;
+    class           dictionary;
+    object          blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+xMin                #eval "-0.5*$BLthickness*$length_nBL";                    // minimum x-coordinate (in m)
+xMax                #eval "0.5*$BLthickness*$length_nBL";                     // maximum x-coordinate (in m)
+yMin                #eval "(1/$x2yFactor)*$xMin";                            // minimum y-coordinate (in m)
+yMax                #eval "(1/$x2yFactor)*$xMax";                            // maximum y-coordinate (in m)
+
+nX                  #eval "mag(round(($xMax-$xMin)/$resolution))";
+nY                  #eval "mag(round(($yMax-$yMin)/$resolution))";
+nZ                  #eval "mag(round(($zMax-$zMin)/$resolution))";
+
+scale 1;
+
+vertices
+(
+    ( $xMin  $yMin   $zMin)
+    ( $xMax  $yMin   $zMin)
+    ( $xMax  $yMax   $zMin)
+    ( $xMin  $yMax   $zMin)
+    ( $xMin  $yMin   $zMax)
+    ( $xMax  $yMin   $zMax)
+    ( $xMax  $yMax   $zMax)
+    ( $xMin  $yMax   $zMax)
+
+
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) ($nX $nY $nZ) simpleGrading (1 1 1)
+);
+
+edges
+(
+);
+
+boundary
+(
+    io_northeast
+    {
+        type patch;
+        faces
+        (
+            (2 6 5 1)
+        );
+    }
+    io_northwest
+    {
+        type patch;
+        faces
+        (
+            (1 5 4 0)
+        );
+    }
+    io_southeast
+    {
+        type patch;
+        faces
+        (
+            (3 7 6 2)
+        );
+    }
+    io_southwest
+    {
+        type patch;
+        faces
+        (
+            (0 4 7 3)
+        );
+    }
+    ww_lower
+    {
+        type wall;
+        faces
+        (
+            (0 3 2 1)
+        );
+    }
+    upper
+    {
+        type patch;
+        faces
+        (
+            (4 5 6 7)
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+
+// ************************************************************************* //

@@ -1,0 +1,90 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1912                                 |
+|   \\  /    A nd           | Website:  www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      changeDictionaryDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+U
+{
+
+
+    boundaryField
+    {
+        "(io_southwest|io_northeast)"
+        {
+            type            freestream;
+            freestreamBC
+            {
+                type            turbulentDigitalFilterInlet;
+                value           uniform (17.5 0 0);
+                variant         digitalFilter;
+                #include        "${FOAM_CASE}/system/include/caseDefinition"
+                xMin            #eval "-0.5*$BLthickness*$length_nBL";                    // minimum x-coordinate (in m)
+                xMax            #eval "0.5*$BLthickness*$length_nBL";                     // maximum x-coordinate (in m)
+                yMin            #eval "(1/$x2yFactor)*$xMin";                            // minimum y-coordinate (in m)
+                yMax            #eval "(1/$x2yFactor)*$xMax";                            // maximum y-coordinate (in m)
+                n               (#eval "mag(round(($yMax-$yMin)/$resolution))" #eval "mag(round(($zMax-$zMin)/$resolution))");
+                // For L, the first three (streamwise) components are Lagrangian time scales in units of seconds (L/Ubulk = 10m / 11m/s) and the remaining components are length scales in units of meters (0.09m).
+                L              (0.91 0.91 0.91 10 10 10 10 10 10);
+                mean
+                {
+                    type        mappedFile;
+                    mapMethod   nearest;
+                    fieldTable  U;
+                }
+                R
+                {
+                    type        mappedFile;
+                    mapMethod   nearest;
+                    fieldTable  turbulenceProperties:R;
+                }
+                continuous      true;
+            }
+            value           uniform (17.5 0 0);
+        }
+        "(io_southeast|io_northwest)"
+        {
+            type            freestream;
+            freestreamBC
+            {
+                type            turbulentDigitalFilterInlet;
+                value           uniform (17.5 0 0);
+                variant         digitalFilter;
+                #include        "${FOAM_CASE}/system/include/caseDefinition"
+                xMin            #eval "-0.5*$BLthickness*$length_nBL";                    // minimum x-coordinate (in m)
+                xMax            #eval "0.5*$BLthickness*$length_nBL";                     // maximum x-coordinate (in m)
+                yMin            #eval "(1/$x2yFactor)*$xMin";                            // minimum y-coordinate (in m)
+                yMax            #eval "(1/$x2yFactor)*$xMax";                            // maximum y-coordinate (in m)
+                n               (#eval "mag(round(($xMax-$xMin)/$resolution))" #eval "mag(round(($zMax-$zMin)/$resolution))");
+                // For L, the first three (streamwise) components are Lagrangian time scales in units of seconds (L/Ubulk = 10m / 11m/s) and the remaining components are length scales in units of meters (0.09m).
+                L               (0.91 0.91 0.91 10 10 10 10 10 10);
+                mean
+                {
+                    type        mappedFile;
+                    mapMethod   nearest;
+                    fieldTable  U;
+                }
+                R
+                {
+                    type        mappedFile;
+                    mapMethod   nearest;
+                    fieldTable  turbulenceProperties:R;
+                }
+                continuous      true;
+            }
+            value           uniform (17.5 0 0);
+        }
+    }
+}
+
+// ************************************************************************* //
