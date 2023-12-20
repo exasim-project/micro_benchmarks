@@ -1,6 +1,5 @@
 case:
     type: GitRepo
-    solver: pisoFoam
     url: https://develop.openfoam.com/committees/hpc.git
     folder: Lid_driven_cavity-3d/S 
     cache_folder: ${{env.LidDrivenCavityS}}
