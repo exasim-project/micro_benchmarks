@@ -9,6 +9,20 @@
       maxIter: 5000
       executor: ${{env.GINKGO_EXECUTOR}}
     - set: solvers/p
+      preconditioner: Multigrid
+      solver: GKOCG
+      forceHostBuffer: 0
+      verbose: 1
+      maxIter: 1000
+      executor: ${{env.GINKGO_EXECUTOR}}
+    - set: solvers/p
+      preconditioner: GISAI
+      solver: GKOCG
+      forceHostBuffer: 0
+      verbose: 1
+      maxIter: 1000
+      executor: ${{env.GINKGO_EXECUTOR}}
+    - set: solvers/p
       solver: PCG
       preconditioner: DIC
       executor: CPU
