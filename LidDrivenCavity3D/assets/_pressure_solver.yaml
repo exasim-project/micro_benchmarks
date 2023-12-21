@@ -1,0 +1,20 @@
+- operation: fvSolution
+  schema: "linear_solver/{solver}{preconditioner}{executor}"
+  values:
+    - set: solvers/p
+      solver: GKOCG
+      forceHostBuffer: 0
+      verbose: 1
+      preconditioner: none
+      matrixFormat: Ell
+      regenerate: 1
+      executor: ${{env.GINKGO_EXECUTOR}}
+    - set: solvers/p
+      preconditioner: none
+      solver: PCG
+      executor: CPU
+    - set: solvers/p
+      solver: GAMG
+      smoother: GaussSeidel
+      preconditioner: GaussSeidel
+      executor: CPU

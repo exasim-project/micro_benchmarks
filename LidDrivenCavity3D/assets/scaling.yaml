@@ -22,6 +22,6 @@ variation:
     variation:
       ${{include../../common/_simple_decomposition.yaml}}
         variation:
-          ${{include../../common/_pressure_solver.yaml}}
-          ${{include../../common/_precond_pressure_solver.yaml}}
+          ${{include._pressure_solver.yaml}}
+          ${{include._precond_pressure_solver.yaml}}
 
