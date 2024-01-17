@@ -28,6 +28,7 @@
 "ca_.*"
 {
     type            cyclicAMI;
+    value      $internalField;
 }
 
 processor

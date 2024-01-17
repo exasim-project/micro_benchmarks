@@ -20,15 +20,18 @@ FoamFile
 nutref          #eval{ $viscRatio * $nuref };
 
 dimensions      [ 0 2 -1 0 0 0 0 ];
-internalField   uniform 1.1; //$nutref;
+internalField   uniform $nutref;
 
 boundaryField
 {
     // inlet
     "ii_.*"
     {
-        type            calculated;
-        value           $internalField;
+        type        timeVaryingMappedFixedValue;
+        offset      0;
+        setAverage  off;
+        mapMethod   nearest;
+        value       $internalField;
     }
 
     // outlet
@@ -41,21 +44,6 @@ boundaryField
     upper
     {
         type            slip;
-    }
-
-    // mixed inlet-outlet
-    "io_.*"
-    {
-        type            freestream;
-        freestreamBC
-        {
-            type        timeVaryingMappedFixedValue;
-            offset      0;
-            setAverage  off;
-            mapMethod   nearest;
-            value       $internalField;
-        }
-        value           $internalField;
     }
 
     // no-slip wall

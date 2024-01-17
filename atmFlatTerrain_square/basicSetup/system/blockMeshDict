@@ -52,7 +52,7 @@ edges
 
 boundary
 (
-    io_northeast
+    oo_northeast
     {
         type patch;
         faces
@@ -60,23 +60,25 @@ boundary
             (2 6 5 1)
         );
     }
-    io_northwest
+    cc_northwest
     {
-        type patch;
+        type cyclic;
+        neighbourPatch cc_southeast;
         faces
         (
             (1 5 4 0)
         );
     }
-    io_southeast
+    cc_southeast
     {
-        type patch;
+        type cyclic;
+        neighbourPatch cc_northwest;
         faces
         (
             (3 7 6 2)
         );
     }
-    io_southwest
+    ii_southwest
     {
         type patch;
         faces

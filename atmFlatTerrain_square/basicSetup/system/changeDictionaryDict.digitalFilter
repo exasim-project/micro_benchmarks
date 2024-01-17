@@ -20,69 +20,34 @@ U
 
     boundaryField
     {
-        "(io_southwest|io_northeast)"
+        ii_southwest
         {
-            type            freestream;
-            freestreamBC
-            {
-                type            turbulentDigitalFilterInlet;
-                value           uniform (17.5 0 0);
-                variant         digitalFilter;
-                #include        "${FOAM_CASE}/system/include/caseDefinition"
-                xMin            #eval "-0.5*$BLthickness*$length_nBL";                    // minimum x-coordinate (in m)
-                xMax            #eval "0.5*$BLthickness*$length_nBL";                     // maximum x-coordinate (in m)
-                yMin            #eval "(1/$x2yFactor)*$xMin";                            // minimum y-coordinate (in m)
-                yMax            #eval "(1/$x2yFactor)*$xMax";                            // maximum y-coordinate (in m)
-                n               (#eval "mag(round(($yMax-$yMin)/$resolution))" #eval "mag(round(($zMax-$zMin)/$resolution))");
-                // For L, the first three (streamwise) components are Lagrangian time scales in units of seconds (L/Ubulk = 10m / 11m/s) and the remaining components are length scales in units of meters (0.09m).
-                L              (0.91 0.91 0.91 10 10 10 10 10 10);
-                mean
-                {
-                    type        mappedFile;
-                    mapMethod   nearest;
-                    fieldTable  U;
-                }
-                R
-                {
-                    type        mappedFile;
-                    mapMethod   nearest;
-                    fieldTable  turbulenceProperties:R;
-                }
-                continuous      true;
-            }
+            type            turbulentDigitalFilterInlet;
             value           uniform (17.5 0 0);
-        }
-        "(io_southeast|io_northwest)"
-        {
-            type            freestream;
-            freestreamBC
+            variant         digitalFilter;
+            #include        "${FOAM_CASE}/system/include/caseDefinition"
+            xMin            #eval "-0.5*$BLthickness*$length_nBL";                    // minimum x-coordinate (in m)
+            xMax            #eval "0.5*$BLthickness*$length_nBL";                     // maximum x-coordinate (in m)
+            yMin            #eval "(1/$x2yFactor)*$xMin";                            // minimum y-coordinate (in m)
+            yMax            #eval "(1/$x2yFactor)*$xMax";                            // maximum y-coordinate (in m)
+            n               (#eval "mag(round(($yMax-$yMin)/$resolution))" #eval "mag(round(($zMax-$zMin)/$resolution))");
+            // For L, the first three (streamwise) components are Lagrangian time scales in units of seconds (L/Ubulk = 10m / 11m/s) and the remaining components are length scales in units of meters (0.09m).
+            // According to "Implementation of a synthetic inflow turbulence generator in idealised WRF v3.6.1 large eddy simulations under neutral atmospheric conditions" L=1.2z/delta looks best.
+            // BL height delta is 1200m here and Ug=17.5, Ly and Lz are in meters with 0.25Lx
+            L              (68.5714 300 300);
+            mean
             {
-                type            turbulentDigitalFilterInlet;
-                value           uniform (17.5 0 0);
-                variant         digitalFilter;
-                #include        "${FOAM_CASE}/system/include/caseDefinition"
-                xMin            #eval "-0.5*$BLthickness*$length_nBL";                    // minimum x-coordinate (in m)
-                xMax            #eval "0.5*$BLthickness*$length_nBL";                     // maximum x-coordinate (in m)
-                yMin            #eval "(1/$x2yFactor)*$xMin";                            // minimum y-coordinate (in m)
-                yMax            #eval "(1/$x2yFactor)*$xMax";                            // maximum y-coordinate (in m)
-                n               (#eval "mag(round(($xMax-$xMin)/$resolution))" #eval "mag(round(($zMax-$zMin)/$resolution))");
-                // For L, the first three (streamwise) components are Lagrangian time scales in units of seconds (L/Ubulk = 10m / 11m/s) and the remaining components are length scales in units of meters (0.09m).
-                L               (0.91 0.91 0.91 10 10 10 10 10 10);
-                mean
-                {
-                    type        mappedFile;
-                    mapMethod   nearest;
-                    fieldTable  U;
-                }
-                R
-                {
-                    type        mappedFile;
-                    mapMethod   nearest;
-                    fieldTable  turbulenceProperties:R;
-                }
-                continuous      true;
+                type        mappedFile;
+                mapMethod   nearest;
+                fieldTable  U;
             }
-            value           uniform (17.5 0 0);
+            R
+            {
+                type        mappedFile;
+                mapMethod   nearest;
+                fieldTable  turbulenceProperties:R;
+            }
+            continuous      true;
         }
     }
 }

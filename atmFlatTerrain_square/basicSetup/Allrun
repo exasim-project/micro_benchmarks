@@ -34,7 +34,7 @@ function writeLog()
 # ---- USER INPUTS ------------------------------------------------------------------------- #
 
 # command for parallel execution
-parEx='srun'
+parEx="mpirun -np $nProcs"
 
 # ---- switches for simulation stages
 # generate CFD grid
@@ -53,13 +53,15 @@ run_SRS=true
 # are executed, e.g. decomposePar)
 restart_sim=false
 start_from_RANS=true
-continue_from_SRS=false
 
 # ---- END USER INPUTS --------------------------------------------------------------------- #
 
 if $meshing; then
 
     echo -e -n '\n    Running blockMesh ...\n'
+    cp system/controlDict.RANS system/controlDict
+    cp system/fvSchemes.RANS system/fvSchemes
+    cp system/fvSolution.RANS system/fvSolution
     blockMesh > "$(writeLog 00_blockMesh)" 2>&1 || exit 1
 
 fi
@@ -85,9 +87,8 @@ if $solving; then
         # initialise 0 folder
 	if $start_from_RANS; then
             ../assets/scripts/getFlowfieldRANS.sh
-            changeDictionary -enableFunctionEntries -dict system/changeDictionaryDict.digitalFilter > "$(writeLog 07_changeDictionary)" 2>&1 || exit 1
-	elif $continue_from_SRS; then
-            ../assets/scripts/getFlowfieldSRS.sh
+            #changeDictionary -enableFunctionEntries -dict system/changeDictionaryDict.digitalFilter > "$(writeLog 07_changeDictionary)" 2>&1 || exit 1
+            changeDictionary -dict system/changeDictionaryDict.DFSEM > "$(writeLog 07_changeDictionary)" 2>&1 || exit 1
 	else
             cp -r 0.orig 0
         fi

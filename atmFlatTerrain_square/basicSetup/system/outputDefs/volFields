@@ -31,15 +31,4 @@ CourantNo
     enabled         true;
     writeControl    writeTime;
 }
-
-R
-{
-    type            turbulenceFields;
-    libs            ( "libfieldFunctionObjects.so" );
-    field           R;
-    log             false;
-    enabled         true;
-    writeControl    writeTime;
-}
-
 // ************************************************************************* //

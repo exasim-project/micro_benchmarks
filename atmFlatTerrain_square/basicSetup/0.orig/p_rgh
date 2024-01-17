@@ -42,11 +42,6 @@ boundaryField
         value           uniform 0;
     }
 
-    // mixed inlet-outlet
-    "io_.*"
-    {
-        type            zeroGradient;
-    }
     "ww_.*"
     {
         type            fixedFluxPressure;

@@ -33,8 +33,11 @@ boundaryField
     // inlet
     "ii_.*"
     {
-        type            fixedValue;
-        value           uniform $epsilonref;
+        type        timeVaryingMappedFixedValue;
+        offset      0;
+        setAverage  off;
+        mapMethod   nearest;
+        value       $internalField;
     }
 
     // outlet
@@ -46,21 +49,6 @@ boundaryField
     upper
     {
         type            slip;
-    }
-    
-    // mixed inlet-outlet
-    "io_.*"
-    {
-        type            freestream;
-        freestreamBC
-        {
-            type        timeVaryingMappedFixedValue;
-            offset      0;
-            setAverage  off;
-            mapMethod   nearest;
-            value       $internalField;
-        }
-        value           $internalField;
     }
 
     "ww_.*"
