@@ -1,0 +1,31 @@
+- operation: fvSolution
+  schema: "linear_solver/{solver}{preconditioner}{executor}"
+  common:
+      solver: GKOCG
+      forceHostBuffer: 0
+      matrixFormat: Ell
+      regenerate: 1
+      verbose: 1
+      executor: ${{env.GINKGO_EXECUTOR}}
+  values:
+    - set: solvers/p
+      preconditioner: BJ
+      maxIter: 5000
+    - set: solvers/p
+      preconditioner: Multigrid
+      maxIter: 1000
+      executor: ${{env.GINKGO_EXECUTOR}}
+    - set: solvers/p
+      preconditioner: GISAI
+      maxIter: 1000
+      executor: ${{env.GINKGO_EXECUTOR}}
+- operation: fvSolution
+  schema: "linear_solver/{solver}{preconditioner}{executor}"
+  common:
+      solver: PCG
+      executor: CPU
+  values:
+    - set: solvers/p
+      preconditioner: DIC
+    - set: solvers/p
+      preconditioner: GAMG
