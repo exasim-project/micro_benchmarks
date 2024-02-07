@@ -15,6 +15,9 @@
 # Backup/recovery versions - anywhere
 .#*
 
+# Signac hidden directories - anywhere
+.*.signac
+
 # Objects and archives - anywhere
 *.[oa]
 *.la
