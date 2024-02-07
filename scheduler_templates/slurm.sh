@@ -24,7 +24,7 @@
 #SBATCH --time=1-00:00:00
 #SBATCH --account=bmbf_2022_EXASIM
     {% endblock tasks %}
-ml gnu/11
-ml openmpi/3
-ml ucfdFOAM/v2212
+module load gnu/11
+module load openmpi/3
+module load OpenFOAM/v2212
 {% endblock header %}
