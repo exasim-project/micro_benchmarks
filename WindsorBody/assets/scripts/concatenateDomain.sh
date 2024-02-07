@@ -14,7 +14,7 @@
 
 # set default number of concatenations
 nCaseCopies=2
-concatFields=true
+concatFields=false
 overwriteFlag='-overwrite'
 # --- get options
 while getopts ":n:f" opt; do
@@ -50,10 +50,6 @@ echo
 timeDir="0"
 if $concatFields && [[ ${timeDir} == '' ]]; then
     echo "No time directory present! Concatenation only effects mesh."
-    concatFields=false
-elif ! $concatFields && [[ ${timeDir} != '' ]]; then
-    echo "Delete present time directory and concatenate only mesh."
-    rm -r ${timeDir}
     concatFields=false
 else
     echo "Concatenate/map fields of time $timeDir"
@@ -127,12 +123,11 @@ do
     stitchMesh $overwriteFlag CFDWT_Right_intern CFDWT_Left_intern >> $logDir/03_stitchMesh.log 2>&1 || exit 1
     # remove empty internal patches
     createPatch $overwriteFlag -dict ./system/createPatchDict.deleteIntern >> $logDir/04_createPatch.deleteIntern.log 2>&1 || exit 1
-    timeDir=$(foamListTimes -latestTime)
-    rm ./$timeDir/meshPhi || rm ./0/meshPhi || true
+    rm ./$timeDir/meshPhi || true
 done
 
 if $concatFields; then
-    cp -a 0/* $timeDir/
+    cp -a 0.orig/* $timeDir/
     cd $timeDir/
     cp U U_0
     cp k k_0

@@ -7,8 +7,8 @@ case:
       - controlDict: controlDict.RANS
     post_build:
       - shell: ${{yaml.location}}/scripts/getMesh.sh
-      - shell: rm -rf 0
       - shell: cp -r 0.orig 0
+        #- shell: ${{yaml.location}}/scripts/getFlowField.sh
       - controlDict:
            writeFormat: binary
            libs: ["libOGL.so", "libpetscFoam.so"]
@@ -16,8 +16,4 @@ case:
 variation:
   - operation: shell
     key: ${{yaml.location}}/scripts/concatenateDomain.sh
-    values: ["-n1", "-n2", "-n4", "-n8"]
-    variation:
-      ${{include../../common/_simple_decomposition.yaml}}
-        variation:
-          ${{include../../common/_precond_pressure_solver.yaml}}
+    values: ["-n1", "-n2"]

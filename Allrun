@@ -1,0 +1,49 @@
+#!/bin/bash -l
+### Script for running the WindsorBody case with obr
+### AutoCFD4-workshop
+### Upstream CFD, 2024
+
+# set yaml-file in which the testmatrix is defined
+testMatrixDefFile='assets/test_concat.yaml'
+# set directory path for case study
+studyDir='reduced_study'
+# switch to run test matrix preparation with obr
+run_preparation=true
+# switch to run simulation jobs
+run_simulations=false
+# switch to run jobs in queueing system
+run_HPC=true
+# switch to run obr postprocessing
+run_obrPost=false
+
+# load modules
+module load gnu/7
+module load openmpi/3
+module load ucfdFOAM/v2212
+module load env/py_3.11
+
+# define environment variables
+export OBR_RUN_CMD="srun -n {np} {solver} -parallel -case {path}/case > {path}/case/{solver}_{timestamp}.log 2>&1"
+export NGPUS=1
+export NCPUS=32
+export NNODES=4
+export FORCE_HOST_BUFFER=true 
+export GINKGO_EXECUTOR="g4dn"
+
+mkdir -p archive
+
+if $run_preparation; then
+    obr init -c $testMatrixDefFile > log.obr_init 2>&1 || exit 1
+    obr run -o generate > log.obr_generate 2>&1 || exit 1
+fi
+
+if $run_simulations; then
+    # run jobs in test matrix
+    obr submit -o runParallelSolver > log.obr_runParallel 2>&1 || exit 1
+fi
+
+if $run_obrPost; then
+    obr archive --campaign "campaign1" --repo "archive"
+    obr apply --folder archive --file assets/scripts/postProcessLogs.py --campaign "campaign1" > log.obr_run-postProcessLogs 2>&1 || exit 1
+    obr status --folder archive --sort_by nCorrectors,solver --extra TimeStep,SolveP,MomentumPredictor,PISOStep,solver_p,p_NoIterations,p_FinalResidual,PIMPLEIteration,PIMPLE_count --export_to json > results.json
+fi
