@@ -1,0 +1,21 @@
+case:
+  type: CaseOnDisk
+  origin: ${{yaml.location}}/../basicSetup
+  post_build:
+    - shell: blockMesh
+    - shell: cp -r 0.orig 0
+    - decomposePar:
+          method: scotch
+          numberOfSubdomains: 64
+variation:
+  - operation: fvSolution
+    schema: "linear_solver/{solver}{preconditioner}"
+    values:
+      - set: solvers/p
+        solver: GAMG
+        preconditioner: none
+        smoother: DICGaussSeidel
+      - set: solvers/p
+        solver: PCG
+        preconditioner: FDIC
+        smoother: none

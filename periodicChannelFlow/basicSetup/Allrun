@@ -1,0 +1,11 @@
+#!/bin/bash
+
+nProcs=`sed -n -e 's/^.*numberOfSubdomains//p'  system/decomposeParDict | sed 's/;/\ /'`
+logDir=`pwd`
+
+blockMesh > $logDir/blockMesh.log 2>&1
+decomposePar > $logDir/decomposePar.log 2>&1
+mpirun -np $nProcs pisoFoam -parallel > $logDir/pisoFoam.log 2>&1
+recomposePar > $logDir/recomposePar.log 2>&1
+postChannel > $logDir/postChannel.log 2>&1
+
