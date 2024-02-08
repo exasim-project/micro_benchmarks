@@ -51,13 +51,12 @@ timePrecision   6;
 runTimeModifiable true;
 
 libs ( 
-	"libgroovyBC.so" 
-	"libAddBoundaryConditions.so"
+	//"libAddBoundaryConditions.so"
      ) ;
 
 OptimisationSwitches
 {
-    fileHandler collated;
+    //fileHandler collated;
 } 
 
 functions
@@ -68,7 +67,7 @@ functions
 	libs ("libsolverFunctionObjects.so");
 	enabled true;
 	writeControl outputTime; // write scalar field results
-        fileHandler  collated;
+        //fileHandler  collated;
 
 	field s;           //name of scalar field
 	nCorr 1;           //number of corrector loop

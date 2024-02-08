@@ -44,6 +44,11 @@ boundaryField
             #include <cstdlib> 
         #};
 
+        codeOptions
+        #{
+            -I$(LIB_SRC)/finiteVolume/lnInclude
+        #};
+
         code
         #{ 
              const fvPatch& boundaryPatch = patch();     //select boundary patch
