@@ -55,6 +55,12 @@ else
     echo "Concatenate/map fields of time $timeDir"
 fi
 
+if ! $concatFields && [[ -d ${timeDir} ]]; then
+    echo "Warning ${timeDir} present, and concatFields not set" 
+    echo "temporarily moving  ${timeDir} to ${timeDir}.bck"
+    mv $timeDir $timeDir.bck
+fi
+
 echo
 logDir="logFiles"
 mkdir -p $logDir
@@ -80,7 +86,7 @@ do
     else
         # --- translate Mesh and flowfield in y-direction
         transVec="(0 $( bc -l <<<"($iCopy-1)*1.92" ) 0)"
-	echo "call transformPoints with $transVec in $PWD, placing logs in $logDir"
+    echo "call transformPoints with $transVec in $PWD, placing logs in $logDir"
         transformPoints -rotateFields -translate "$transVec" > $logDir/01_transformpoints_$(($iCopy-1)).log 2>&1 || exit 1
         # --- rename all patches, except the right boundary, to have unique patch names for later apllication of mapFieldsPar utility
         # change patch names in boundaryFields of constant directory
@@ -163,11 +169,23 @@ if $concatFields; then
             sed -i "s/_2/_$iCopy/g" system/mapFieldsDict
         fi
 
-	echo "call mapFieldsPar in $PWD, placing logs in $logDir"
+    echo "call mapFieldsPar in $PWD, placing logs in $logDir"
         # mapFieldsPar -sourceTime 'latestTime' -mapMethod direct -patchMapMethod nearestFaceAMI ../tmpDir0/ > $logDir/11_mapFieldsPar.log 2>&1 || exit 1 # Error, if OF-v2206 is loaded with gnu/11
         mapFieldsPar -sourceTime 'latestTime' -mapMethod direct -fields '("p.*" "U.*" "k.*" "nut.*" "nuTilda.*" "omega.*")' -targetRegion region0 ../$iTmpDir/ >> $logDir/06_mapFieldsPar.log 2>&1 || exit 1 # Error, if OF-v2206 is loaded with gnu/11
     done
     echo "Done concatenating fields"
 fi
 
-rm -r ../tmpDir*
+if ! $concatFields && [[ -d ${timeDir}.bck ]]; then
+    echo "Restoring time directory ${timeDir}" 
+    mv $timeDir.bck $timeDir
+fi
+
+for ((iCopy=0; iCopy<=$nCaseCopies; iCopy++))
+do
+    if [[ -d ../tmpDir$iCopy ]]; then
+        echo "cleaning up tmpDir directory tmpDir$iCopy" 
+        rm -r ../tmpDir*
+    fi 
+done 
+
