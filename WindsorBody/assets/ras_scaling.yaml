@@ -5,10 +5,9 @@ case:
       - fvSchemes: fvSchemes.RANS
       - fvSolution: fvSolution.RANS
       - controlDict: controlDict.RANS
+      - initialConditions: 0.orig
     post_build:
       - shell: ${{yaml.location}}/scripts/getMesh.sh
-      - shell: rm -rf 0
-      - shell: cp -r 0.orig 0
       - controlDict:
            writeFormat: binary
            libs: ["libOGL.so", "libpetscFoam.so"]
