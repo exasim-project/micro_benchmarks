@@ -131,6 +131,7 @@ do
     echo "call stitchMesh with $overwriteFlag in $PWD, placing logs in $logDir"
     createPatch $overwriteFlag -dict ./system/createPatchDict.deleteIntern >> $logDir/04_createPatch.deleteIntern.log 2>&1 || exit 1
     rm ./$timeDir/meshPhi || true
+    echo "Done adding $iCopy domain"
 done
 echo "Done merging all $nCaseCopies domains"
 
