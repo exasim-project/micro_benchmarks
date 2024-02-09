@@ -11,7 +11,7 @@ case:
       - controlDict:
            writeFormat: binary
            libs: ["libOGL.so", "libpetscFoam.so"]
-           endTime: 50.0
+           endTime: 100.0
 variation:
   - operation: shell
     key: ${{yaml.location}}/scripts/concatenateDomain.sh
