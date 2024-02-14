@@ -16,7 +16,7 @@ FoamFile
 
 application     pimpleFoam;
 
-startFrom       startTime;
+startFrom       latestTime;
 
 startTime       0;
 
@@ -51,7 +51,7 @@ timePrecision   6;
 runTimeModifiable true;
 
 libs ( 
-	"libAddBoundaryConditions.so"
+	//"libAddBoundaryConditions.so"
      ) ;
 
 OptimisationSwitches
@@ -67,11 +67,11 @@ functions
 	libs ("libsolverFunctionObjects.so");
 	enabled true;
 	writeControl outputTime; // write scalar field results
-        fileHandler  collated;
 
 	field s;           //name of scalar field
 	nCorr 1;           //number of corrector loop
-	D     1.45105e-04; //difussion coefficient
+	alphaD    1.0;     //Prandtl number
+	alphaDt   0.8;     //turbulent Prandtl number
 
 	log yes;
 	}

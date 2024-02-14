@@ -1,4 +1,0 @@
-$. \
-$.inletOutletAdvective/inletOutletAdvectiveFvPatchFields.C
-
-LIB = $(FOAM_USER_LIBBIN)/libAddBoundaryConditions

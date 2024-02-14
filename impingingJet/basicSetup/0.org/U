@@ -14,7 +14,7 @@ FoamFile
     object      U;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-        
+
 dimensions      [ 0 1 -1 0 0 0 0 ];
         
 internalField   uniform ( 0 0 0 );
@@ -33,15 +33,20 @@ boundaryField
      }
      topInlet
      {
-    	type            codedFixedValue;
-    	value           uniform ( 0 0 0);
+        type            codedFixedValue;
+        value           uniform ( 0 0 0);
 
-    	// Name of generated boundary condition
-   	 redirectType    nonUniformRandomInlet;
+        // Name of generated boundary condition
+        redirectType    nonUniformRandomInlet;
 
-	 codeInclude
+        codeInclude
         #{
-        	#include <cstdlib> 
+            #include <cstdlib> 
+        #};
+
+        codeOptions
+        #{
+            -I$(LIB_SRC)/finiteVolume/lnInclude
         #};
 
         code
@@ -64,13 +69,13 @@ boundaryField
                 const scalar f = A*(R-r)*exp(-sigma*(R-r));
                 const scalar u = -(n+2)*(1-pow(r/R,n))/n;
                 const scalar uz = (u > 0)? 0 : u;
-		const scalar rndmax = RAND_MAX;
-		const scalar rnd = std::rand();
-	        const scalar ff  = (r>R)? 0 : 2.0*0.14*(rnd/rndmax-0.5);
+                const scalar rndmax = RAND_MAX;
+                const scalar rnd = std::rand();
+                const scalar ff  = (r>R)? 0 : 2.0*0.14*(rnd/rndmax-0.5);
                 
                 //Info << Foam::min() << nl << endl; 
 
-                field[faceI] = vector( 0, 0, f); // define velocity value on the face i
+                field[faceI] = vector( 0, 0, f*ff+uz); // define velocity value on the face i
              }
 
         #};
@@ -84,9 +89,12 @@ boundaryField
         inletValue      uniform (0 0 0);
 
 //      type            advective;
-//	value           $internalField;
+//    value           $internalField;
      }
 }
+        
+        
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
         
         
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
