@@ -1,13 +1,20 @@
 - operation: decomposePar
-  schema: "decompose/{method}_{numberOfSubdomains}"
+  schema: "decompose/{method}_{partition}_N{nodes}n{numberOfSubdomains}"
   common:
       method: simple
-  values:
-    - numberOfSubdomains: ${{ 1.0 * ${{env.NGPUS}} }}
-    - numberOfSubdomains: ${{ 0.25 * ${{env.NCPUS}} }}
-    - numberOfSubdomains: ${{ 0.5 * ${{env.NCPUS}} }}
-    - numberOfSubdomains: ${{ 1 * ${{env.NCPUS}} }}
-    - if: ${{ ${{env.NNODES}} >= 2 }}
-      numberOfSubdomains: ${{ 2 * ${{env.NCPUS}} }}
-    - if: ${{ ${{env.NNODES}} >= 4 }}
-      numberOfSubdomains: ${{ 4 * ${{env.NCPUS}} }}
+  generator:
+      key: nodes 
+      values: [1, 2, 4, 6, 8, 10]
+      template:
+          # GPU decompositions
+        - numberOfSubdomains: ${{ 1 * nodes * ${{env.NGPUS}} }}
+          partition: GPU
+        - numberOfSubdomains: ${{ 2 * nodes * ${{env.NGPUS}} }}
+          partition: GPU
+        - numberOfSubdomains: ${{ 3 * nodes * ${{env.NGPUS}} }}
+          partition: GPU
+        - numberOfSubdomains: ${{ 4 * nodes * ${{env.NGPUS}} }}
+          partition: GPU
+          # CPU decomposition
+        - numberOfSubdomains: ${{ 1 * nodes * ${{env.NCPUS}} }}
+          partition: CPU

@@ -2,6 +2,7 @@
   schema: "decompose_GPU/{method}_{numberOfSubdomains}"
   common:
     method: simple
+    partition: GPU
   values:
     - numberOfSubdomains: ${{ 1 * ${{env.NGPUS}} }}
     - if: ${{ ${{env.NNODES}} >= 2 }}
@@ -19,6 +20,7 @@
   schema: "decompose_GPU_oversubscribe/{method}_{numberOfSubdomains}"
   common:
     method: simple
+    partition: GPU
   values:
     - numberOfSubdomains: ${{ 0.25 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
     - numberOfSubdomains: ${{ 0.5 * ${{env.NGPUS}} * ${{env.NCPUS_PER_GPU}} }}
@@ -29,6 +31,7 @@
   schema: "decompose_CPU/{method}_{numberOfSubdomains}"
   common:
     method: simple
+    partition: CPU
   values:
     - numberOfSubdomains: ${{ 0.25 * ${{env.NCPUS}} }}
     - numberOfSubdomains: ${{ 0.5 * ${{env.NCPUS}} }}
