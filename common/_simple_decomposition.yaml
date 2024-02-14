@@ -1,5 +1,5 @@
 - operation: decomposePar
-  schema: "decompose/{method}_{partition}_N{nodes}n{numberOfSubdomains}"
+  schema: "decompose/{method}_{partition}_N{nodes}_n{numberOfSubdomains}"
   common:
       method: simple
   generator:
