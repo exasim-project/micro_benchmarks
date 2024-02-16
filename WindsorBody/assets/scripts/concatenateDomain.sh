@@ -141,6 +141,11 @@ do
 done
 echo "Done merging all $nCaseCopies domains"
 
+if ! $concatFields && [[ -d ${timeDir} ]]; then
+    echo "Found time directory $timeDir. Cleaning up if empty"
+    rmdir $timeDir
+fi
+
 if $concatFields; then
     echo "Start concatenating fields"
     cp -a 0.orig/* $timeDir/
