@@ -16,18 +16,18 @@ It is recommended to use [OBR](https://github.com/hpsim/OBR) to setup the cases.
     obr run -o fetchCase
     # Run the mesh concatenation
     obr submit \
-          -o shell \
-	  --partition cpuonly \
-          --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
-	  --time 60 \
-           --scheduler_args "tasks_per_node 76"
+      --operation shell \
+      --partition cpuonly \
+      --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
+      --time 60 \
+      --scheduler_args "tasks_per_node 76"
     # Run the mesh decomposition
     obr submit \
-          -o decomposePar \
-	  --partition cpuonly \
-          --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
-	  --time 60 \
-          --scheduler_args "tasks_per_node 76"
+      --operation decomposePar \
+      --partition cpuonly \
+      --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
+      --time 60 \
+      --scheduler_args "tasks_per_node 76"
     # Setup the solver. Done locally since not many compute resouces are needed
     obr run -o fvSolution 
 
