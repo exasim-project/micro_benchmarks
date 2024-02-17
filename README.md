@@ -28,8 +28,20 @@ It is recommended to use [OBR](https://github.com/hpsim/OBR) to setup the cases.
       --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
       --time 60 \
       --scheduler_args "tasks_per_node 76"
-    # Setup the solver. Done locally since not many compute resouces are needed
+    # Setup the solver. Can be done locally since not many compute resouces are needed
     obr run -o fvSolution 
+
+## Submission examples
+
+On HoReKa the jobs can be submitted based on the desired partition. An example for the cpu partition is given next
+
+    obr submit \
+       -o runParallelSolver 
+       --filter solver==PCG \
+       --partition cpuonly \
+       --time 240 \
+       --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
+       --scheduler_args "tasks_per_node 76"
 
 
 # Structure
