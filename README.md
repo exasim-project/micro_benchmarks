@@ -33,7 +33,7 @@ It is recommended to use [OBR](https://github.com/hpsim/OBR) to setup the cases.
 
 ## Submission examples
 
-On HoReKa the jobs can be submitted based on the desired partition. An example for the cpu partition is given next
+On HoReKa the jobs can be submitted based on the desired partition. An example for the CPU partition is given next
 
     obr submit \
        -o runParallelSolver 
@@ -42,6 +42,17 @@ On HoReKa the jobs can be submitted based on the desired partition. An example f
        --time 240 \
        --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
        --scheduler_args "tasks_per_node 76"
+
+For the GPU cases multiple decompositions per node are tested. For a correct calculation of the 'tasks_per_node' argument use the nodes argument. 
+
+    obr submit \
+         -o runParallelSolver \
+         --filter solver==GKOCG \
+         --filter node==2 \
+         --partition accelerated \
+         --time 240 \
+         --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
+         --scheduler_args "nodes 2 gpus_per_node 4"
 
 
 # Structure

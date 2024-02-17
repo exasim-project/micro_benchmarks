@@ -7,9 +7,11 @@
         {% if memory_requested %}
 #SBATCH --mem={{ memory_requested|format_memory }}
         {% endif %}
+
 {% if partition %}
 #SBATCH --partition={{ partition }}
 {% endif %}
+
 {% if walltime %}
 #SBATCH -t {{ walltime }}
 {% endif %}
@@ -24,7 +26,15 @@
 {% endif %}
 
 #SBATCH --ntasks={{ operations|calc_tasks('np', parallel, force) }}
+{% if nodes %}
+{% set nnodes = nodes | int %}
+#SBATCH --tasks-per-node={{ operations|calc_tasks('np', parallel, force) // nnodes }}
+{% else %}
+tasks
 #SBATCH --tasks-per-node={{ tasks_per_node }}
+{% endif %}
+
+
 {% if account %}
 #SBATCH --account={{ account }}
 {% endif %}
