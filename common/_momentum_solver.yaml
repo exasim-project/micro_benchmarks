@@ -4,7 +4,7 @@
     - set: solvers/U
       preconditioner: BJ
       solver: GKOBiCGStab
-      forceHostBuffer: ${{env.FORCE_HOST_BUFFER}}
+      forceHostBuffer: 0
       verbose: 1
       executor: ${{env.GINKGO_EXECUTOR}}
     - set: solvers/U
