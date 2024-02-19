@@ -17,7 +17,7 @@ case:
 variation:
   - operation: shell
     key: ${{yaml.location}}/scripts/concatenateDomain.sh
-    values: ["-f -n1", "-f -n2", "-f -n4", "-f -n8"]
+    values: ["-fn1", "-fn2", "-fn4", "-fn8"]
     variation:
       ${{include../../common/_simple_decomposition.yaml}}
         variation:
