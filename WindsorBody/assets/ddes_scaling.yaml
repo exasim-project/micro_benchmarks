@@ -8,6 +8,8 @@ case:
     post_build:
       - shell: ${{yaml.location}}/scripts/getMesh.sh
       - shell: ${{yaml.location}}/scripts/getFlowFieldDDES.sh
+      - turbulenceProperties:
+           simulationType: LES
       - controlDict:
            writeFormat: binary
            libs: ["libOGL.so", "libpetscFoam.so"]
