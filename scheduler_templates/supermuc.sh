@@ -7,11 +7,9 @@
         {% if memory_requested %}
 #SBATCH --mem={{ memory_requested|format_memory }}
         {% endif %}
-
 {% if partition %}
 #SBATCH --partition={{ partition }}
 {% endif %}
-
 {% if walltime %}
 #SBATCH -t {{ walltime }}
 {% endif %}
@@ -33,12 +31,19 @@
 #SBATCH --tasks-per-node={{ tasks_per_node }}
 {% endif %}
 
-
 {% if account %}
 #SBATCH --account={{ account }}
 {% endif %}
 
-export CUDA_VISIBLE_DEVICES="0,1,2,3"
+module load cmake
+module load ninja
+module load gcc
+module load gdb
+module load flex
+module load git
+module load intel-toolkit
 source $HOME/OpenFOAM/openfoam/etc/bashrc
+export ONEAPI_DEVICE_SELECTOR=level_zero:0
+export GIT_PYTHON_REFRESH=w
 
 {% endblock header %}
