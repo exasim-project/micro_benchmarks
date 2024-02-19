@@ -16,14 +16,14 @@ It is recommended to use [OBR](https://github.com/hpsim/OBR) to setup the cases.
     obr run -o fetchCase
     # Run the mesh concatenation
     obr submit \
-      --operation shell \
+      --operations shell \
       --partition cpuonly \
       --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
       --time 60 \
       --scheduler_args "tasks_per_node 76"
     # Run the mesh decomposition
     obr submit \
-      --operation decomposePar \
+      --operations decomposePar \
       --partition cpuonly \
       --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
       --time 60 \
@@ -36,7 +36,7 @@ It is recommended to use [OBR](https://github.com/hpsim/OBR) to setup the cases.
 On HoReKa the jobs can be submitted based on the desired partition. An example for the CPU partition is given next
 
     obr submit \
-       -o runParallelSolver 
+       --operations runParallelSolver 
        --filter solver==PCG \
        --partition cpuonly \
        --time 240 \
@@ -46,7 +46,7 @@ On HoReKa the jobs can be submitted based on the desired partition. An example f
 For the GPU cases multiple decompositions per node are tested. For a correct calculation of the 'tasks_per_node' argument use the nodes argument. 
 
     obr submit \
-         -o runParallelSolver \
+         --operations runParallelSolver \
          --filter solver==GKOCG \
          --filter node==2 \
          --partition accelerated \
