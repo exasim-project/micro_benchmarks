@@ -86,22 +86,26 @@ do
     else
         # --- translate Mesh and flowfield in y-direction
         transVec="(0 $( bc -l <<<"($iCopy-1)*1.92" ) 0)"
-    echo "call transformPoints with $transVec in $PWD, placing logs in $logDir"
+        echo "call transformPoints with $transVec in $PWD, placing logs in $logDir"
         transformPoints -rotateFields -translate "$transVec" > $logDir/01_transformpoints_$(($iCopy-1)).log 2>&1 || exit 1
+        echo "done"
         # --- rename all patches, except the right boundary, to have unique patch names for later apllication of mapFieldsPar utility
         # change patch names in boundaryFields of constant directory
         sed -i "s/\bCFDWT_Left\b/CFDWT_Left_intern/g" ./constant/polyMesh/boundary
         if $concatFields; then
             # change patch names in boundaryFields of time directory
+            echo "fixing patch names"
             find ./$timeDir/* -type f -exec sed -i "s/CFDWT_Left/CFDWT_Left_intern/g" {} \;
         fi
         # array of non intern patches
         patchesNonIntern=("CFDWT_Roof" "CFDWT_Floor" "CFDWT_In" "CFDWT_Out" "Windsor_Body" "Windsor_Base" "Windsor_Pins")
         # change patch names in boundaryFields of constant directory
         for patch in "${patchesNonIntern[@]}"; do
+            echo "fixing patch names in constant directory"
             sed -i "s/\b${patch}\b/${patch}_${iCopy}/g" ./constant/polyMesh/boundary
         done
         if $concatFields; then
+            echo "fixing again patch names in time directory"
             # change patch names in boundaryFields of time directory
             for patch in "${patchesNonIntern[@]}"; do
                 find ./$timeDir/* -type f -exec sed -i "s/\b${patch}\b/${patch}_$iCopy/g" {} \;
