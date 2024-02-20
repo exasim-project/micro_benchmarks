@@ -75,7 +75,7 @@ boundaryField
                 
                 //Info << Foam::min() << nl << endl; 
 
-                field[faceI] = vector( 0, 0, f); // define velocity value on the face i
+                field[faceI] = vector( 0, 0, f*ff+uz); // define velocity value on the face i
              }
 
         #};
@@ -92,9 +92,5 @@ boundaryField
 //    value           $internalField;
      }
 }
-        
-        
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-        
         
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
