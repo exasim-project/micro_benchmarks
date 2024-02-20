@@ -1,0 +1,13 @@
+- operation: blockMesh
+  schema: "mesh/{cells}"
+  values:
+    - modifyBlock: "(100 100 100)->(400 400 400)"
+      cells: 400
+      controlDict:
+        deltaT: 0.0001
+        endTime: 0.002
+    - modifyBlock: "(100 100 100)->(500 500 500)"
+      cells: 500
+      controlDict:
+        deltaT: 0.00008
+        endTime: 0.0016

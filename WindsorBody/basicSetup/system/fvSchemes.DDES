@@ -84,7 +84,7 @@ fluxRequired
 
 wallDist
 {
-    method          exactDistance;
+    method          meshWave;
     nRequired       true;
     updateInterval  0;
 }

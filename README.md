@@ -10,7 +10,50 @@ The following case additioanlly tested within EXASIM contains a proprietary airf
 * **MexicoRotor**: Reproduction of MexicoRotor wind tunnel tests [K. Boorsma, J.G. Schepers (2014), New Mexico Experiment: Preliminary Overview with Initial Validation, ECN Edition 15, Vol.48](https://publications.tno.nl/publication/34629288/1z9HK6/e14048.pdf)
 
 # Usage
-* It is recommended to use [OBR](https://github.com/hpsim/OBR) to setup the cases. This is a tool to automatically setup and run large OpenFOAM parameter studies based on the data structuring software [signac](https://docs.signac.io/en/latest/projects.html). 
+It is recommended to use [OBR](https://github.com/hpsim/OBR) to setup the cases. This is a tool to automatically setup and run large OpenFOAM parameter studies based on the data structuring software [signac](https://docs.signac.io/en/latest/projects.html). On HPC clusters it is recommended to setup the and run the cases using the cluster submission functionality, this way creating cases can be distributed over many compute nodes. In the following this shown for the HoReKa supercomputer and the WindsorBody case.
+
+    obr init -c <PATH_TO_YAML>
+    obr run -o fetchCase
+    # Run the mesh concatenation
+    obr submit \
+      --operations shell \
+      --partition cpuonly \
+      --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
+      --time 60 \
+      --scheduler_args "tasks_per_node 76"
+    # Run the mesh decomposition
+    obr submit \
+      --operations decomposePar \
+      --partition cpuonly \
+      --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
+      --time 60 \
+      --scheduler_args "tasks_per_node 76"
+    # Setup the solver. Can be done locally since not many compute resouces are needed
+    obr run -o fvSolution 
+
+## Submission examples
+
+On HoReKa the jobs can be submitted based on the desired partition. An example for the CPU partition is given next
+
+    obr submit \
+       --operations runParallelSolver 
+       --filter solver==PCG \
+       --partition cpuonly \
+       --time 240 \
+       --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
+       --scheduler_args "tasks_per_node 76"
+
+For the GPU cases multiple decompositions per node are tested. For a correct calculation of the 'tasks_per_node' argument use the nodes argument. 
+
+    obr submit \
+         --operations runParallelSolver \
+         --filter solver==GKOCG \
+         --filter node==2 \
+         --partition accelerated \
+         --time 240 \
+         --template $EXASIM_MICROBENCHMARKS/scheduler_templates/horeka.sh \
+         --scheduler_args "nodes 2 gpus_per_node 4"
+
 
 # Structure
 Each micro-benchmark is stored in a subdirectory. In each case directory there is an additional subdirectory `basicSetup` containing the OpenFOAM setup and a subdirectory `assets` containing YAML files describing parameter or scaling studies, as well as post-processing scripts or reference data.
@@ -27,3 +70,4 @@ Each micro-benchmark is stored in a subdirectory. In each case directory there i
 Additionally the repositary contains a subdirectory `common`, which includes YAML setup snippets for different parameter changes e.g. domain decomposition, solver choice and blockMesh resolution.
 The directory `scheduler_templates` contains examples for cluster submission templates used with [OBR](https://github.com/hpsim/OBR).
 The `Allrun` script contains an example workflow how to setup a case with OBR, run it on a cluster and do post-processing and archieving. 
+

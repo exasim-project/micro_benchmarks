@@ -1,32 +1,37 @@
 - operation: fvSolution
   schema: "linear_solver_p/{solver}{preconditioner}{executor}"
   values:
-    - set: solvers/p
+    - if: [{partition: GPU}]
+      set: solvers/p
       preconditioner: BJ
       solver: GKOCG
       forceHostBuffer: ${{env.FORCE_HOST_BUFFER}}
       verbose: 1
       maxIter: 5000
       executor: ${{env.GINKGO_EXECUTOR}}
-    - set: solvers/p
+    - if: [{partition: GPU}]
+      set: solvers/p
       preconditioner: Multigrid
       solver: GKOCG
       forceHostBuffer: 0
       verbose: 1
       maxIter: 1000
       executor: ${{env.GINKGO_EXECUTOR}}
-    - set: solvers/p
+    - if: [{partition: GPU}]
+      set: solvers/p
       preconditioner: GISAI
       solver: GKOCG
       forceHostBuffer: 0
       verbose: 1
       maxIter: 1000
       executor: ${{env.GINKGO_EXECUTOR}}
-    - set: solvers/p
+    - if: [{partition: CPU}]
+      set: solvers/p
       solver: PCG
       preconditioner: DIC
       executor: CPU
-    - set: solvers/p
+    - if: [{partition: CPU}]
+      set: solvers/p
       solver: GAMG
       smoother: GaussSeidel
       preconditioner: GaussSeidel
@@ -35,7 +40,8 @@
     - operation: fvSolution
       schema: "linear_solver_u/momentum_{solver}{executor}"
       values:
-        - set: solvers/U
+        - if: [{partition: GPU}]
+          set: solvers/U
           preconditioner: BJ
           solver: GKOBiCGStab
           forceHostBuffer: ${{env.FORCE_HOST_BUFFER}}

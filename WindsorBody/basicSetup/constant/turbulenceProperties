@@ -15,7 +15,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include       "${FOAM_CASE}/system/include/caseDefinition"
+#include       "../system/include/caseDefinition"
 
 simulationType RAS;
 
