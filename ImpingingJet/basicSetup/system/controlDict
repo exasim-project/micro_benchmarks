@@ -56,7 +56,7 @@ libs (
 
 OptimisationSwitches
 {
-    fileHandler collated;
+    //fileHandler collated;
 } 
 
 functions

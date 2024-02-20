@@ -45,7 +45,7 @@ patches
         // Dictionary to construct new patch from
         patchInfo
         {   
-            type patch;
+            type wall;
 
             // Optional non-default tolerance to be able to define cyclics
             // on bad meshes
