@@ -1,0 +1,135 @@
+#!/bin/bash -l
+#SBATCH --job-name "EXASIM_AC1_Tests"
+#SBATCH --ntasks=192
+#SBATCH --time=2-00:00:00
+#SBATCH --partition=compute
+#SBATCH --account=bmbf_2022_EXASIM
+
+# ---- FUNCTION DEFINITIONS ---------------------------------------------------------------- #
+
+
+# function to read parameters from caseDefinition...
+function getInputParam ()
+{
+    varVal=`grep -w ${1} system/include/caseDefinition | cut -d ";" -f 1 | grep -v '//'`
+    varVal=`echo ${varVal:${#1}}`
+    echo $varVal
+}
+
+# read selected variables from caseDefinition file
+nProcs=`getInputParam nCores`
+solverRANS=`getInputParam solverRANS`
+solverSRS=`getInputParam solverSRS`
+
+function writeLog() 
+{
+    # first argument is the filename prefix
+    local logDir="logFiles"
+    local logFile="$1.$(date "+%Y-%m-%d_%H-%M-%S").log"
+    mkdir -p $logDir
+    ln -sf $logFile $logDir/$1.latest.log
+    echo $logDir/$logFile
+}
+
+# ---- USER INPUTS ------------------------------------------------------------------------- #
+
+# command for parallel execution
+parEx="mpirun -np $nProcs"
+
+# ---- switches for simulation stages
+# generate CFD grid
+meshing=true
+
+# run CFD solver
+solving=true
+
+# run precursor RANS
+run_RANS=false
+
+# run individual stages of scale-resolving simulation
+run_SRS=true
+
+# restart simulation from existing field (i.e. no initial preparatory steps
+# are executed, e.g. decomposePar)
+restart_sim=false
+start_from_RANS=true
+
+# ---- END USER INPUTS --------------------------------------------------------------------- #
+
+if $meshing; then
+
+    echo -e -n '\n    Running blockMesh ...\n'
+    cp system/controlDict.RANS system/controlDict
+    cp system/fvSchemes.RANS system/fvSchemes
+    cp system/fvSolution.RANS system/fvSolution
+    blockMesh > "$(writeLog 00_blockMesh)" 2>&1 || exit 1
+
+fi
+
+# ---- run CFD solver
+if $solving; then
+
+    echo -e -n '\n    Copy control files for initialisation ...\n'
+    (
+        cd system
+        cp controlDict.RANS controlDict
+        cp fvSchemes.RANS fvSchemes
+        cp fvSolution.RANS fvSolution
+        cd ..
+    )
+    # prepare simulation for parallel run or re-start from existing field
+    if $restart_sim; then
+
+        echo -e -n '\n    Re-start simulation from existing field (i.e. no initial preparatory steps are executed, e.g. decomposePar) ...\n'
+
+    else
+
+        # initialise 0 folder
+	if $start_from_RANS; then
+            ../assets/scripts/getFlowfieldRANS.sh
+            #changeDictionary -enableFunctionEntries -dict system/changeDictionaryDict.digitalFilter > "$(writeLog 07_changeDictionary)" 2>&1 || exit 1
+            changeDictionary -dict system/changeDictionaryDict.DFSEM > "$(writeLog 07_changeDictionary)" 2>&1 || exit 1
+	else
+            cp -r 0.orig 0
+        fi
+
+        # decompose CFD domain
+        decomposePar > "$(writeLog 01_decomposePar)" 2>&1 || exit 1
+
+	# run checkMesh
+	${parEx} checkMesh -parallel -latestTime > "$(writeLog 02_checkMesh)" 2>&1 || exit 1
+
+    fi
+
+    if $run_RANS; then
+
+        echo -e -n '\n    Running steady-state RANS ...\n'
+        (
+            cp system/controlDict.RANS system/controlDict
+            cp system/fvSchemes.RANS system/fvSchemes
+            cp system/fvSolution.RANS system/fvSolution
+            cp constant/turbulenceProperties.RANS constant/turbulenceProperties
+        )
+
+	${parEx} ${solverRANS} -parallel > "$(writeLog 05_${solverRANS})" 2>&1 || exit 1
+
+    fi
+
+    if $run_SRS; then
+
+        echo -e -n '\n    Running transient SRS ...\n'
+        (
+            cp system/controlDict.SRS system/controlDict
+            cp system/fvSchemes.SRS system/fvSchemes
+            cp system/fvSolution.SRS system/fvSolution
+            cp constant/turbulenceProperties.SRS constant/turbulenceProperties
+        )
+
+        ${parEx} ${solverSRS} -parallel > "$(writeLog 06_${solverSRS})" 2>&1 || exit 1
+
+    fi
+
+fi
+
+
+# ---- END OF FILE ------------------------------------------------------------------------- #

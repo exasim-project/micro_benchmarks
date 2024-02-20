@@ -1,0 +1,49 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1912                                 |
+|   \\  /    A nd           | Website:  www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      changeDictionaryDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+U
+{
+    boundaryField
+    {
+        ii_southwest
+        {
+            type         turbulentDFSEMInlet;
+            delta        2200;     // chosen to be 0.55*domain_height according to https://doi.org/10.1016/j.jweia.2021.104715
+            nCellPerEddy 3;
+            m            0.5;
+            U
+            {
+                type        mappedFile;
+                mapMethod   nearest;
+            }
+            R
+            {
+                type        mappedFile;
+                mapMethod   nearest;
+                fieldTable  turbulenceProperties:R;
+            }
+            L
+            {
+                type        mappedFile;
+                mapMethod   nearest;
+                fieldTable  turbulenceProperties:L;
+            }
+            value           uniform (17.5 0 0);
+        }
+    }
+}
+
+// ************************************************************************* //

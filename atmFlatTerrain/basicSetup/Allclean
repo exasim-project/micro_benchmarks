@@ -1,0 +1,15 @@
+#!/bin/bash
+
+rm -r ./proc*
+rm -r ./0
+rm -r ./logFiles
+rm -r ./postProcessing
+rm ./slurm*
+rm -r ./constant/polyMesh
+rm ./constant/transportProperties
+rm ./constant/turbulenceProperties
+rm ./system/controlDict
+rm ./system/fvSchemes
+rm ./system/fvSolution
+
+#------------------------------------------------------------------------------

@@ -1,0 +1,45 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+// free-slip wall
+"ws_.*"
+{
+    type            slip;
+}
+
+// symmetry
+"sm_.*"
+{
+    type            symmetry;
+}
+
+// cyclic (fully matching)
+"cc_.*"
+{
+    type            cyclic;
+}
+
+// cyclic (interpolation via AMI)
+"ca_.*"
+{
+    type            cyclicAMI;
+    value      $internalField;
+}
+
+processor
+{
+    type  processor;
+    value $internalField;
+}
+
+processorCyclic
+{
+    type  processorCyclic;
+    value $internalField;
+}
+// ************************************************************************* //

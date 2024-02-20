@@ -1,0 +1,36 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      turbulenceProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+simulationType  LES;
+
+LES
+{
+    LESModel        $turbModelSRS;
+    delta           $deltaSRS;
+
+    turbulence      on;
+    printCoeffs     on;
+    kOmegaSSTDDESCoeffs
+    {
+        useSigma      false;
+        C1            1.44;
+        C2            1.92;
+    }
+}
+
+// ************************************************************************* //

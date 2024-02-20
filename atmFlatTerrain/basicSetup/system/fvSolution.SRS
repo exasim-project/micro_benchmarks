@@ -1,0 +1,106 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+solvers
+{
+    "(p|p_rgh)"
+    {
+        solver          GAMG;
+        tolerance       0;
+        relTol          0.01;
+        smoother        GaussSeidel;
+        nCellsInCoarsestLevel 50;
+        minIter         1;
+        // Explicit specify solver for coarse-level correction to override
+        // solution tolerance
+        coarsestLevelCorr
+        {
+            // For limited residual reduction (relTol) PPCR behaves better
+            // than PCG (or PPCG)
+            solver          PCG;
+            preconditioner  DIC;
+            relTol          0.05;
+        }
+    }
+
+    "(pFinal|p_rghFinal|Phi)"
+    {
+        $p;
+    }
+
+    "(U|T|k|omega|nuTilda)"
+    {
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       0;
+        relTol          0.1;
+        minIter         1;
+    }
+
+    "(U|T|k|omega|nuTilda)Final"
+    {
+        $U;
+    }
+
+}
+
+potentialFlow
+{
+    nNonOrthogonalCorrectors   10;
+}
+
+PIMPLE
+{
+    nOuterCorrectors           30;
+    nCorrectors                1;
+    nNonOrthogonalCorrectors   0;
+
+    residualControl
+    {
+        "(p|p_rgh)"
+        {
+            tolerance 0;
+            relTol    1e-1;
+        }
+ 
+        U
+        {
+            tolerance 0;
+            relTol    1e-3;
+        }
+
+    }
+}
+
+relaxationFactors
+{
+    fields
+    {
+        "(p|p_rgh|pFinal|p_rghFinal)"   0.3;
+    }
+
+    equations
+    {
+        "(U|UFinal)"               0.7;
+        "(k|omega|nuTilda)"        0.7;
+        "(k|omega|nuTilda)Final"   0.7;
+        "(T|TFinal)"               0.1; 
+    }
+}
+
+// ************************************************************************* //

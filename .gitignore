@@ -16,7 +16,7 @@
 .#*
 
 # Signac hidden directories - anywhere
-.*.signac
+.signac
 
 # Objects and archives - anywhere
 *.[oa]
