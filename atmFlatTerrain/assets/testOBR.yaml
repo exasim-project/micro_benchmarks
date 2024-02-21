@@ -1,0 +1,28 @@
+case:
+  type: CaseOnDisk
+  origin: ${{yaml.location}}/../basicSetup
+  uses:
+    - controlDict: controlDict.SRS
+  pre_build:
+    - shell: cp system/controlDict.SRS system/controlDict
+  post_build:
+      - shell: cp system/fvSolution.SRS system/fvSolution
+      - shell: cp system/fvSchemes.SRS system/fvSchemes
+      - shell: blockMesh
+      - shell: ${{yaml.location}}/scripts/getFlowfieldRANS.sh
+      - shell: changeDictionary -dict system/changeDictionaryDict.DFSEM
+      - decomposePar:
+          method: kahip
+          numberOfSubdomains: 96
+variation:
+  - operation: fvSolution
+    schema: "linear_solver/{solver}{preconditioner}"
+    values:
+      - set: solvers/p_rgh
+        solver: GAMG
+        preconditioner: none
+        smoother: DICGaussSeidel
+      - set: solvers/p_rgh
+        solver: PCG
+        preconditioner: FDIC
+        smoother: none

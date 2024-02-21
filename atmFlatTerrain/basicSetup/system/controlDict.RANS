@@ -22,7 +22,7 @@ libs
     atmosphericModels
 );
 
-application       $solverRANS;
+application       buoyantBoussinesqSimpleFoam;
 
 startFrom         latestTime;
 startTime         0;

@@ -15,10 +15,8 @@ FoamFile
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include        "${FOAM_CASE}/system/include/caseDefinition"
-
-numberOfSubdomains  $nCores;
-method              $decoMethod; 
+numberOfSubdomains  96;
+method              kahip; 
 
 kahipCoeffs
 {

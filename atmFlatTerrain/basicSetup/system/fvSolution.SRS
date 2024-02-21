@@ -14,11 +14,9 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include        "${FOAM_CASE}/system/include/caseDefinition"
-
 solvers
 {
-    "(p|p_rgh)"
+    "p|p_rgh"
     {
         solver          GAMG;
         tolerance       0;
@@ -38,12 +36,12 @@ solvers
         }
     }
 
-    "(pFinal|p_rghFinal|Phi)"
+    "pFinal|p_rghFinal|Phi"
     {
         $p;
     }
 
-    "(U|T|k|omega|nuTilda)"
+    "U|T|k|omega|nuTilda"
     {
         solver          PBiCGStab;
         preconditioner  DILU;
@@ -52,7 +50,7 @@ solvers
         minIter         1;
     }
 
-    "(U|T|k|omega|nuTilda)Final"
+    "UFinal|TFinal|kFinal|omegaFinal|nuTildaFinal"
     {
         $U;
     }
@@ -72,7 +70,7 @@ PIMPLE
 
     residualControl
     {
-        "(p|p_rgh)"
+        "p|p_rgh"
         {
             tolerance 0;
             relTol    1e-1;
@@ -91,15 +89,15 @@ relaxationFactors
 {
     fields
     {
-        "(p|p_rgh|pFinal|p_rghFinal)"   0.3;
+        "p|p_rgh|pFinal|p_rghFinal"   0.3;
     }
 
     equations
     {
-        "(U|UFinal)"               0.7;
-        "(k|omega|nuTilda)"        0.7;
-        "(k|omega|nuTilda)Final"   0.7;
-        "(T|TFinal)"               0.1; 
+        "U|UFinal"               0.7;
+        "k|omega|nuTilda"        0.7;
+        "kFinal|omegaFinal|nuTildaFinal"   0.7;
+        "T|TFinal"               0.1; 
     }
 }
 

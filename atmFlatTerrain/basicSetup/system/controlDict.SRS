@@ -14,14 +14,9 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include        "${FOAM_CASE}/system/include/caseDefinition"
+#include        "include/caseDefinition"
 
-libs            
-(
-    distributed 
-);
-
-application       $solverSRS;
+application       buoyantBoussinesqPimpleFoam;
 
 startFrom         latestTime;
 startTime         0;
@@ -43,6 +38,12 @@ timeFormat        general;
 timePrecision     6;
 
 runTimeModifiable true;
+
+libs
+(
+    distributed
+);
+
 
 OptimisationSwitches
 {
