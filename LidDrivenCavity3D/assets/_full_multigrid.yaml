@@ -1,0 +1,65 @@
+- operation: fvSolution
+  schema: "multigrid/coarse_max_iters/{coarseMaxIters}"
+  common:
+      solver: GKOMultigrid
+      set: solvers/p
+      verbose: 1
+      preconditioner: none
+      matrixFormat: Csr
+      regenerate: 1
+      forceHostBuffer: 0
+      executor: ${{env.GINKGO_EXECUTOR}}
+      smootherMaxIters: 1
+      minCoarseRows: 64
+      maxLevels: 5
+  values:
+      - coarseMaxIters:  5
+      - coarseMaxIters: 10
+      - coarseMaxIters: 25
+      - coarseMaxIters: 50
+- operation: fvSolution
+  schema: "multigrid/min_coarse_rows/{minCoarseRows}"
+  common:
+      solver: GKOMultigrid
+      set: solvers/p
+      verbose: 1
+      preconditioner: none
+      matrixFormat: Csr
+      regenerate: 1
+      forceHostBuffer: 0
+      executor: ${{env.GINKGO_EXECUTOR}}
+      smootherMaxIters: 1
+      maxLevels: 5
+      coarseMaxIters: 50
+  values:
+    - minCoarseRows: 64
+    - minCoarseRows: 32
+    - minCoarseRows: 16
+    - minCoarseRows: 8
+- operation: fvSolution
+  schema: "gkocg/{pretype}"
+  common:
+      solver: GKOCG
+      set: solvers/p
+      verbose: 1
+      matrixFormat: Csr
+      regenerate: 1
+      forceHostBuffer: 0
+      executor: ${{env.GINKGO_EXECUTOR}}
+  values:
+    - pretype: DMG
+      preconditioner: 
+        type: Distributed
+        preconditioner: Multigrid
+        smootherMaxIters: 1
+        maxLevels: 5
+        coarseMaxIters: 5
+    - pretype: SMG
+      preconditioner: 
+        preconditioner: Multigrid
+        smootherMaxIters: 1
+        maxLevels: 5
+        coarseMaxIters: 5
+        type: Schwarz
+    - pretype: none
+      preconditioner: none 
