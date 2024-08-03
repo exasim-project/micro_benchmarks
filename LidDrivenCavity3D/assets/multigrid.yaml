@@ -36,6 +36,11 @@ variation:
         controlDict:
           deltaT: 0.000166
           endTime: 0.0033
+      - modifyBlock: "(100 100 100)->(400 400 400)"
+        cells: 400
+        controlDict:
+          deltaT: 0.000125
+          endTime: 0.0025
     variation:
       - operation: decomposePar
         schema: "decompose/{method}_{partition}_n{numberOfSubdomains}"
