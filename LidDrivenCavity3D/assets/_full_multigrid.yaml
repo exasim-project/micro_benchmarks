@@ -7,7 +7,6 @@
       preconditioner: none
       matrixFormat: Csr
       regenerate: 1
-      forceHostBuffer: 0
       executor: ${{env.GINKGO_EXECUTOR}}
       smootherMaxIters: 1
       minCoarseRows: 64
@@ -26,7 +25,6 @@
       preconditioner: none
       matrixFormat: Csr
       regenerate: 1
-      forceHostBuffer: 0
       executor: ${{env.GINKGO_EXECUTOR}}
       smootherMaxIters: 1
       maxLevels: 5
@@ -44,7 +42,6 @@
       verbose: 1
       matrixFormat: Csr
       regenerate: 1
-      forceHostBuffer: 0
       executor: ${{env.GINKGO_EXECUTOR}}
   values:
     - pretype: DMG
