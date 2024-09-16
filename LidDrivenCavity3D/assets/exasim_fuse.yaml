@@ -10,38 +10,15 @@ case:
       # NOTE Need to create fvSolution first
       - controlDict:
            writeFormat: binary
-           libs: ["libOGL.so"]
+           libs: ["libOGL.so", "libpetscFoam.so"]
       - fvSolution:
             set: solvers/p
             clear: True
             tolerance: 1e-04
             relTol: 0
             maxIter: 5000
-            forceHostBuffer: ${{env.EXASIM_FORCE_HOST_BUFFER}}
 variation:
-  - operation: blockMesh
-    schema: "mesh/{cells}"
-    values:
-      - modifyBlock: "(100 100 100)->(100 100 100)"
-        cells: 100
-        controlDict:
-          deltaT: 0.0005
-          endTime: 0.01
-      - modifyBlock: "(100 100 100)->(200 200 200)"
-        cells: 200
-        controlDict:
-          deltaT: 0.00025
-          endTime: 0.005
-      - modifyBlock: "(100 100 100)->(300 300 300)"
-        cells: 300
-        controlDict:
-          deltaT: 0.000166
-          endTime: 0.0033
-      - modifyBlock: "(100 100 100)->(400 400 400)"
-        cells: 400
-        controlDict:
-          deltaT: 0.000125
-          endTime: 0.0025
+  ${{include._blockMesh.yaml}}
     variation:
       - operation: decomposePar
         schema: "decompose/{method}_{partition}_n{numberOfSubdomains}"
@@ -54,9 +31,29 @@ variation:
               - numberOfSubdomains: ${{ coeff * ${{env.NGPUS}} }}
                 partition: GPU
         variation:
-          ${{include._full_multigrid.yaml}}
+          - operation: fvSolution
+            schema: "linear_solver/fuse_{fuse}"
+            values:
+              - if: [{partition: GPU}]
+                set: solvers/p
+                solver: GKOCG
+                forceHostBuffer: 0
+                verbose: 1
+                fuse: 1
+                preconditioner: none
+                matrixFormat: Coo
+                executor: ${{env.GINKGO_EXECUTOR}}
+              - if: [{partition: GPU}]
+                set: solvers/p
+                solver: GKOCG
+                forceHostBuffer: 0
+                verbose: 1
+                fuse: 0
+                preconditioner: none
+                matrixFormat: Coo
+                executor: ${{env.GINKGO_EXECUTOR}}
 postProcess:
-  queries: ["cells", "numberOfSubdomains", "pretype", "ClockTime", "timeStepContErrors_sumLocal"]
+  queries: ["hostname", "cells", "numberOfSubdomains", "fuse", "ClockTime", "timeStepContErrors_sumLocal"]
   matcher:
     - regexp: '\[OGL LOG\]\[Proc: 0\]{field}: {name}: (?P<{name}>[0-9.]*) \[ms\]'
       name: ogl_matcher

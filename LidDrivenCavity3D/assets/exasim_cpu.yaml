@@ -1,0 +1,48 @@
+case:
+    type: GitRepo
+    url: https://develop.openfoam.com/committees/hpc.git
+    folder: Lid_driven_cavity-3d/S 
+    cache_folder: ${{env.LidDrivenCavityS}}
+    commit: f9594d16aa6993bb3690ec47b2ca624b37ea40cd  
+    uses:
+      - fvSolution: fvSolution.fixedNORM
+    post_build:
+      # NOTE Need to create fvSolution first
+      - controlDict:
+           writeFormat: binary
+           libs: ["libOGL.so", "libpetscFoam.so"]
+      - fvSolution:
+            set: solvers/p
+            clear: True
+            tolerance: 1e-04
+            relTol: 0
+            maxIter: 5000
+variation:
+  ${{include._blockMesh.yaml}}
+      - operation: decomposePar
+        schema: "decompose/{method}_{partition}_n{numberOfSubdomains}"
+        common:
+            method: simple
+        values:
+        - numberOfSubdomains: ${{ 1 * ${{env.NCPUS}} }}
+          partition: CPU
+        variation:
+          - operation: fvSolution
+            schema: "linear_solver_p/{solver}{preconditioner}{executor}"
+            values:
+            - if: [{partition: CPU}]
+              set: solvers/p
+              solver: PCG
+              preconditioner: none
+              executor: CPU
+            - if: [{partition: CPU}]
+              set: solvers/p
+              solver: PCG
+              preconditioner: DIC
+              executor: CPU
+            - if: [{partition: CPU}]
+              set: solvers/p
+              solver: GAMG
+              smoother: GaussSeidel
+              preconditioner: GaussSeidel
+              executor: CPU
