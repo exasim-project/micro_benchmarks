@@ -34,7 +34,7 @@ U
             // For L, the first three (streamwise) components are Lagrangian time scales in units of seconds (L/Ubulk = 10m / 11m/s) and the remaining components are length scales in units of meters (0.09m).
             // According to "Implementation of a synthetic inflow turbulence generator in idealised WRF v3.6.1 large eddy simulations under neutral atmospheric conditions" L=1.2z/delta looks best.
             // BL height delta is 1200m here and Ug=17.5, Ly and Lz are in meters with 0.25Lx
-            L              (68.5714 300 300);
+            L              (68.5714 300 300 300 68.5714 300 300 300 68.5714);
             mean
             {
                 type        mappedFile;
@@ -48,6 +48,7 @@ U
                 fieldTable  turbulenceProperties:R;
             }
             continuous      true;
+            fsm             true;
         }
     }
 }
