@@ -1,0 +1,100 @@
+case:
+    type: GitRepo
+    url: https://develop.openfoam.com/committees/hpc.git
+    folder: Lid_driven_cavity-3d/S 
+    cache_folder: ${{env.LidDrivenCavityS}}
+    commit: f9594d16aa6993bb3690ec47b2ca624b37ea40cd  
+    uses:
+      - fvSolution: fvSolution.fixedNORM
+    post_build:
+      # NOTE Need to create fvSolution first
+      - controlDict:
+           writeFormat: binary
+           libs: ["libOGL.so", "libpetscFoam.so"]
+      - fvSolution:
+            set: solvers/p
+            clear: True
+            tolerance: 1e-04
+            relTol: 0
+            maxIter: 5000
+variation:
+  ${{include._blockMesh.yaml}}
+    variation:
+      - operation: decomposePar
+        schema: "decompose/{method}_{partition}_n{numberOfSubdomains}"
+        common:
+            method: simple
+        generator:
+            key: coeff 
+            values: [1, 2, 4]
+            template:
+              - numberOfSubdomains: ${{ coeff * ${{env.NGPUS}} }}
+                partition: GPU
+        variation:
+          - operation: fvSolution
+            schema: "ranks_per_gpu_{ranksPerGPU}_fused_{fuse}"
+            common:
+                verbose: 1
+                solver: GKOCG
+                preconditioner: none
+                executor: ${{env.GINKGO_EXECUTOR}}
+                forceHostBuffer: 0
+                matrixFormat: Coo
+                fuse: 1
+            values:
+              - set: solvers/p
+                ranksPerGPU: 1
+              - set: solvers/p
+                ranksPerGPU: 2
+              - set: solvers/p
+                ranksPerGPU: 4
+              - set: solvers/p
+                ranksPerGPU: 8
+              - set: solvers/p
+                ranksPerGPU: 16
+postProcess:
+  queries: ["hostname", "ranksPerGPU", "cells", "numberOfSubdomains", "fuse", "ClockTime", "timeStepContErrors_sumLocal"]
+  matcher:
+    - regexp: '\[OGL LOG\]\[Proc: 0\]{field}: {name}: (?P<{name}>[0-9.]*) \[ms\]'
+      name: ogl_matcher
+      args: ["field", "name"]
+    - regexp: '\[INFO\] {name}: (?P<{name}>[0-9.]*) \[ms\]'
+      name: info_matcher
+      args: ["name"]
+  log:
+    - matcher: info_matcher
+      args: ["TimeStep"]
+      type: average
+    - matcher: info_matcher
+      args: ["PISOStep"]
+      type: average
+    - matcher: info_matcher
+      args: ["SolveP"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "solve"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "solve_multi_gpu"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "copy_x_back"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "init_precond"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "perform_all_to_all_update"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "perform_pairwise_update"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "reorder_matrix_data"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p_distributed_matrix", "call_update"]
+      type: average
+    - matcher: transpEqn
+      args: ["p"]
+      type: average
