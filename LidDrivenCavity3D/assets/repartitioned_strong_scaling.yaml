@@ -64,7 +64,7 @@ variation:
                 executor: CPU
                 preconditioner: none
 postProcess:
-  queries: ["hostname", "ranksPerGPU", "cells", "numberOfSubdomains", "fuse", "ClockTime", "timeStepContErrors_sumLocal"]
+  queries: ["executor", "hostname", "ranksPerGPU", "cells", "numberOfSubdomains", "fuse", "ClockTime", "timeStepContErrors_sumLocal"]
   matcher:
     - regexp: '\[OGL LOG\]\[Proc: 0\]{field}: {name}: (?P<{name}>[0-9.]*) \[ms\]'
       name: ogl_matcher
