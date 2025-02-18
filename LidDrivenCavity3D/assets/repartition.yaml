@@ -26,7 +26,7 @@ variation:
             method: simple
         generator:
             key: coeff 
-            values: [1, 2, 4]
+            values: [1, 2, 4, 8, 16]
             template:
               - numberOfSubdomains: ${{ coeff * ${{env.NGPUS}} }}
                 partition: GPU
@@ -38,7 +38,7 @@ variation:
                 solver: GKOCG
                 preconditioner: none
                 executor: ${{env.GINKGO_EXECUTOR}}
-                forceHostBuffer: 0
+                forceHostBuffer: 1
                 matrixFormat: Coo
                 fuse: 1
             values:
@@ -53,7 +53,7 @@ variation:
               - set: solvers/p
                 ranksPerGPU: 16
 postProcess:
-  queries: ["hostname", "ranksPerGPU", "cells", "numberOfSubdomains", "fuse", "ClockTime", "timeStepContErrors_sumLocal"]
+  queries: ["hostname", "executor",  "ranksPerGPU", "cells", "numberOfSubdomains", "fuse", "ClockTime", "timeStepContErrors_sumLocal", "matrix_type"]
   matcher:
     - regexp: '\[OGL LOG\]\[Proc: 0\]{field}: {name}: (?P<{name}>[0-9.]*) \[ms\]'
       name: ogl_matcher
