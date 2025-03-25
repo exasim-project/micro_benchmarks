@@ -1,22 +1,23 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v2212                                 |
-|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|  \\    /   O peration     | Version:  v1906                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
-FoamFile
+
+wallShearStress
 {
-    version     2.0;
-    format      ascii;
-    class       dictionary;
-    object      decomposeParDict;
+    type            wallShearStress;
+    libs            ("libfieldFunctionObjects.so");
+
+    enabled         true;
+    writeControl    writeTime;
+    patches
+    (
+        bottomWall
+        topWall
+    );
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-numberOfSubdomains  64;
-
-method          scotch;
-
-writeCells    true;
 // ************************************************************************* //

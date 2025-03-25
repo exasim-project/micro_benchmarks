@@ -5,18 +5,15 @@
 |   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
-FoamFile
+
+solverInfo
 {
-    version     2.0;
-    format      ascii;
-    class       dictionary;
-    object      decomposeParDict;
+    type                solverInfo;
+    libs                ( "libutilityFunctionObjects.so" );
+    fields              ( U p );
+    writeControl        timeStep;
+    writeInterval       1;
+    writeResidualFields no;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-numberOfSubdomains  64;
-
-method          scotch;
-
-writeCells    true;
 // ************************************************************************* //

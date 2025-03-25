@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v2212                                 |
-|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|  \\    /   O peration     | Version:  plus                                  |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -10,13 +10,36 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    object      decomposeParDict;
+    location    "system";
+    object      sampleDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+type                sets;
+libs                ( "libsampling.so" );
 
-numberOfSubdomains  64;
+writeControl        writeTime;
 
-method          scotch;
 
-writeCells    true;
+interpolationScheme cell;
+setFormat           raw;
+
+fields
+(
+    UMean
+    UPrime2Mean
+    pMean
+    pPrime2Mean
+);
+
+sets
+(
+    lineR
+    {
+        type        midPoint;
+        axis        y;
+        start       (0.385 0.0 0.205);
+        end         (0.385 2.0 0.205);
+    }
+);
+
 // ************************************************************************* //

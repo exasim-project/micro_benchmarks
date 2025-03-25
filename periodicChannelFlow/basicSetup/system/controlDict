@@ -22,15 +22,15 @@ startTime       0;
 
 stopAt          endTime;
 
-endTime         1722.8874;
+endTime         780; //1722.8874;
 
 deltaT          0.0078;
 
 writeControl    runTime;
 
-writeInterval   17.2302;
+writeInterval   15.6; //17.2302;
 
-purgeWrite      0;
+purgeWrite      2;
 
 writeFormat     binary;
 
@@ -69,6 +69,16 @@ functions
             }
         );
     }
+    processorField1
+    {
+        type            processorField;
+        libs            (fieldFunctionObjects);
+        writeControl    writeTime;
+    }
+    #include     "wallShearStress"
+    #include     "solverInfo"
+    #include     "fieldMinMax"
+    #include     "outputDefs"
 }
 
 

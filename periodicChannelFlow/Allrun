@@ -1,0 +1,9 @@
+#!/bin/bash
+
+#obr init -c assets/testOBR.yaml
+#obr run -o generate
+#obr submit -o runParallelSolver --max_queue_size 100 --template ../scheduler_templates/slurm.sh
+obr submit -o runParallelSolver --solver-cmd "postProcess -func sampleDict_line -latestTime" --max_queue_size 100 --template ../scheduler_templates/slurm.sh
+obr submit -o runParallelSolver --solver-cmd "topoSet -latestTime" --max_queue_size 100 --template ../scheduler_templates/slurm.sh
+obr apply --file assets/apply2tree.py --campaign "Validation"
+

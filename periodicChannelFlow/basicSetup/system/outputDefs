@@ -1,0 +1,76 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1906                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+Ubar_inlet1
+{
+    type            surfaceFieldValue;
+    libs            ("libfieldFunctionObjects.so");
+
+    log             false;
+    writeControl    timeStep;
+    writeInterval   1;
+    writeFields     false;
+
+    regionType      patch;
+    name            inout1_half1;
+
+    operation       areaAverage;
+    fields          (U);
+}
+Ubar_inlet2
+{
+    type            surfaceFieldValue;
+    libs            ("libfieldFunctionObjects.so");
+
+    log             false;
+    writeControl    timeStep;
+    writeInterval   1;
+    writeFields     false;
+
+    regionType      patch;
+    name            inout2_half1;
+
+    operation       areaAverage;
+    fields          (U);
+}
+wSS_top
+{
+    type            surfaceFieldValue;
+    libs            ("libfieldFunctionObjects.so");
+
+    log             false;
+    writeControl    timeStep;
+    writeInterval   1;
+    writeFields     false;
+
+    regionType      patch;
+    name            topWall;
+
+    operation       areaAverage;
+    postOperation   mag;
+    fields          (wallShearStress);
+}
+
+Urms_max
+{
+    type            volFieldValue;
+    libs            ("libfieldFunctionObjects.so");
+
+    log             false;
+    writeControl    timeStep;
+    writeInterval   1;
+    writeFields     false;
+
+    regionType      all;
+
+    operation       max;
+    postOperation   mag;
+    fields          (UPrime2Mean);
+}
+
+// ************************************************************************* //

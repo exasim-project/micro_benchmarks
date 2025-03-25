@@ -10,13 +10,24 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    object      decomposeParDict;
+    object      topoSetDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-numberOfSubdomains  64;
+actions
+(
+    {
+        name    procBoundary;
+        type    faceSet;
+        action  new;
+        source  boundaryToFace;
+    }
+    {
+        name    procBoundaryZone;
+        type    faceZoneSet;
+        action  new;
+        source  setToFaceZone;
+        faceSet procBoundary;
+    }
+);
 
-method          scotch;
-
-writeCells    true;
-// ************************************************************************* //

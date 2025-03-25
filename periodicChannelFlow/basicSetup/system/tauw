@@ -1,0 +1,32 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1906                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+tauw
+{
+    type               forceCoeffs;
+    libs               ("libforces.so");
+    patches            
+    (
+        bottomWall
+        topWall
+    );
+    rhoInf             1.0;
+    rho                rhoInf;
+    CofR               (0 0 0);
+    dragDir            (1 0 0);
+    liftDir            (0 0 1);
+    pitchAxis          (0 1 0);
+    magUInf            1.41421356237; // Sets dynamic pressure to 1 by 0.5*rhoInf*sqr(magUInf)
+    lRef               1.0;
+    Aref               0.6; // 2*dx*dz = 2*0.75*0.4
+    writeControl       timeStep;
+    writeInterval      1;
+    log                false;
+}
+
+// ************************************************************************* //
