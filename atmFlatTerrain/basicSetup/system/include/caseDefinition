@@ -1,7 +1,7 @@
 // Meshing paramaters:
 BLthickness         1500;                // Atmospheric boundary layer thickness
 x2yFactor           3;                   // Ratio of mean flow component Ux to Uy
-length_nBL          5;                   // Domain length in number of BLThicknesses
+length_nBL          12;                   // Domain length in number of BLThicknesses
 zMin                0;                   // minimum z-coordinate (in m)
 zMax                4000;                // maximum z-coordinate (in m)
 resolution          32;
@@ -28,7 +28,7 @@ dt                  2e-1;               // time step size (in s)
 tAvg                500;                // time when to start averaging (in s), 
                                         // should be approx. after one flow through: 
                                         // BLthickness*length_nBL/Uxref=1500*5/17.5=428.5 -> round up to N*dt*fieldOutInterval
-tEnd                2000;               // end time of simulation (in s)
+tEnd                20;               // end time of simulation (in s)
 nIterRANS           20000;              // iterations for RANS
 fieldOutInterval    500;                // write interval for output of OpenFOAM fields
 
