@@ -1,0 +1,134 @@
+case:
+  type: CaseOnDisk
+  origin: ${{yaml.location}}/../basicSetup
+  post_build:
+          #- shell: blockMesh
+          #- shell: ${{yaml.location}}/scripts/getFlowField.sh
+        #- shell: cp -r 0.orig 0
+        #- shell: topoSet
+        #- shell: createPatch -overwrite
+      - controlDict:
+           writeFormat: binary
+           libs: ["libOGL.so"]
+           endTime: 0.1
+variation:
+      - operation: decomposePar
+        schema: "run_{partition}/deco_{numberOfSubdomains}"
+        common:
+            method: multiLevel
+            tasksPerNode: 76
+            methods: ["kahip", "kahip", "kahip"]
+            distribution: ["auto", 4, 19]
+            levels: ["node", "gpu", "cpu"]
+        generator:
+            key: coeff
+            values: [1, 2, 6, 12, 24]
+            template:
+              - numberOfSubdomains: ${{ coeff * 76 }}
+                partition: GPU
+        variation:
+          - operation: fvSolution
+            schema: "solve_{solver}/precond_{preconditioner}"
+            common:
+                verbose: 1
+                solver: GKOCG
+                executor: cuda
+                MPIxRankComm: 1
+                forceHostBuffer: 0
+                matrixFormat: Coo
+                fuse: 1
+                ranksPerGPU: 19
+            values:
+              - set: solvers/p
+                preconditioner: BJ
+              - set: solvers/p
+                preconditioner: "{
+                                       preconditioner Multigrid;
+                                       caching 150;
+                                   }"
+      - operation: decomposePar
+        schema: "run_{partition}/deco_{numberOfSubdomains}"
+        common:
+            method: multiLevel
+            tasksPerNode: 76
+            methods: ["kahip", "kahip", "kahip"]
+            distribution: ["auto", 4, 19]
+            levels: ["node", "gpu", "cpu"]
+        generator:
+            key: coeff
+            values: [1, 6, 12, 24, 58, 118]
+            template:
+              - numberOfSubdomains: ${{ coeff * 76 }}
+                partition: CPU
+        variation:
+          - operation: fvSolution
+            schema: "{solver}{preconditioner}"
+            values:
+              - set: solvers/p
+                solver: GAMG
+                executor: CPU
+                preconditioner: none
+                smoother: GaussSeidel
+              - set: solvers/p
+                solver: PCG
+                executor: CPU
+                preconditioner: FDIC
+                smoother: none
+postProcess:
+  queries: ["executor", "preconditioner", "ranksPerGPU", "nCells", "numberOfSubdomains", "fuse", "ClockTime", "timeStepContErrors_sumLocal"]
+  matcher:
+    - regexp: '\[OGL LOG\]\[Proc: 0\]{field}: {name}: (?P<{name}>[0-9.]*) \[ms\]'
+      name: ogl_matcher
+      args: ["field", "name"]
+    - regexp: '\[INFO\] {name}: (?P<{name}>[0-9.]*) \[ms\]'
+      name: info_matcher
+      args: ["name"]
+  log:
+    - matcher: info_matcher
+      args: ["MomentumPredictor"]
+      type: average
+    - matcher: info_matcher
+      args: ["MatrixAssemblyPI"]
+      type: average
+    - matcher: info_matcher
+      args: ["MatrixAssemblyPII"]
+      type: average
+    - matcher: info_matcher
+      args: ["MatrixAssemblyU"]
+      type: average
+    - matcher: info_matcher
+      args: ["TimeStep"]
+      type: average
+    - matcher: info_matcher
+      args: ["PIMPLEStep"]
+      type: average
+    - matcher: info_matcher
+      args: ["SolveP"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "solve"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "solve_multi_gpu"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "copy_x_back"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "init_precond"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "perform_all_to_all_update"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "perform_pairwise_update"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "reorder_matrix_data"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p_distributed_matrix", "call_update"]
+      type: average
+    - matcher: transpEqn
+      args: ["p"]
+      type: average

@@ -19,20 +19,17 @@ solvers
     p
     {
         solver          GAMG;
-        smoother        GaussSeidel;
+        smoother        DICGaussSeidel;
 	tolerance       1e-03;
         relTol          0.01;
-        nCellsInCoarsestLevel 50;
-	minIter         1;
+        nPreSweeps      0;
+        nPostSweeps     2;
+        cacheAgglomeration true;
+        nCellsInCoarsestLevel 1000;
+        agglomerator    faceAreaPair;
+        mergeLevels     1;
 	maxIter 	3000;
-	coarsestLevelCorr
-        {
-            // For limited residual reduction (relTol) PPCR behaves better
-            // than PCG (or PPCG)
-            solver          PPCR;
-            preconditioner  DIC;
-            relTol          0.05;
-        }
+
     }
 
     pFinal
