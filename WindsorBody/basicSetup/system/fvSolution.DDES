@@ -30,7 +30,7 @@ solvers
         {
             // For limited residual reduction (relTol) PPCR behaves better
             // than PCG (or PPCG)
-            solver          PCG;
+            solver          PPCR;
             preconditioner  DIC;
             relTol          0.05;
         }
