@@ -29,6 +29,6 @@ tAvg                500;                // time when to start averaging (in s),
                                         // should be approx. after one flow through: 
                                         // BLthickness*length_nBL/Uxref=1500*5/17.5=428.5 -> round up to N*dt*fieldOutInterval
 tEnd                20;               // end time of simulation (in s)
-nIterRANS           20000;              // iterations for RANS
+nIterRANS           10000;              // iterations for RANS
 fieldOutInterval    500;                // write interval for output of OpenFOAM fields
 

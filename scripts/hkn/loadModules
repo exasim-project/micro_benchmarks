@@ -1,0 +1,7 @@
+module purge
+module load compiler/gnu/12
+module load devel/cuda/12.2
+module load devel/cmake/3.26
+export WM_PROJECT_SITE=~/ucfdRotorFOAM
+. ~/OpenFOAM/OpenFOAM-v2412/etc/bashrc
+. ~/OBR_ENV/bin/activate

@@ -1,49 +1,121 @@
-#!/bin/bash -l
-### Script for running the WindsorBody case with obr
-### AutoCFD4-workshop
-### Upstream CFD, 2024
+#!/bin/bash 
+### Script setting up a new performance campaign with the EXASIM benchmarks
+### Upstream CFD, 2025
 
-# set yaml-file in which the testmatrix is defined
-testMatrixDefFile='assets/test_concat.yaml'
-# set directory path for case study
-studyDir='reduced_study'
-# switch to run test matrix preparation with obr
-run_preparation=true
-# switch to run simulation jobs
-run_simulations=false
-# switch to run jobs in queueing system
-run_HPC=true
-# switch to run obr postprocessing
-run_obrPost=false
+CAMPAIGN_NAME="20250606"
+ENVIRONMENT_FILE="./scripts/hkn/loadModules"
 
-# load modules
-module load gnu/7
-module load openmpi/3
-module load ucfdFOAM/v2212
-module load env/py_3.11
+source $ENVIRONMENT_FILE
+export OBR_RUN_CMD="mpirun --bind-to core -mca coll_hcoll_enable 0 -np {np} {solver} {solverargs} -parallel -case {path}/case > {path}/case/{solver}_{timestamp}.log 2>&1"
 
-# define environment variables
-export OBR_RUN_CMD="srun -n {np} {solver} -parallel -case {path}/case > {path}/case/{solver}_{timestamp}.log 2>&1"
-export NGPUS=1
-export NCPUS=32
-export NNODES=4
-export FORCE_HOST_BUFFER=true 
-export GINKGO_EXECUTOR="g4dn"
+#CASES=(periodicChannelFlow atmFlatTerrain WindsorBody ImpingingJet MEXICO_ALM)
+CASES=(atmFlatTerrain WindsorBody MEXICO_ALM)
+YAMLS=(performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml)
+#YAMLS=(performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml)
+NJOBSPERSTUDY=(32 22 24)  
+#NJOBSPERSTUDY=(16 32 22 22 24)  
 
-mkdir -p archive
+# --- Parameters ---
+MAX_JOBS=100
+CHECK_INTERVAL=300
+ALL_SUBMITTED=0
 
-if $run_preparation; then
-    obr init -c $testMatrixDefFile > log.obr_init 2>&1 || exit 1
-    obr run -o generate > log.obr_generate 2>&1 || exit 1
-fi
+# Initialize list of case directories
+CASE_DIRS=()
+for i in "${!CASES[@]}"; do
+    CASE_DIRS+=("${CASES[$i]}_${CAMPAIGN_NAME}")
+done
 
-if $run_simulations; then
-    # run jobs in test matrix
-    obr submit -o runParallelSolver > log.obr_runParallel 2>&1 || exit 1
-fi
+# Function to check job slots
+wait_for_slots() {
+    local expected_jobs=$1
+    while true; do
+        current_jobs=$(squeue -u "$USER" | tail -n +2 | wc -l)
+        jobs_left=$((MAX_JOBS - current_jobs))
+        if (( jobs_left >= expected_jobs )); then
+            return
+        fi
+        echo "[WAIT] Only $jobs_left job slots available; need $expected_jobs. Retrying in $CHECK_INTERVAL seconds..."
+        sleep "$CHECK_INTERVAL"
+    done
+}
 
-if $run_obrPost; then
-    obr archive --campaign "campaign1" --repo "archive"
-    obr apply --folder archive --file assets/scripts/postProcessLogs.py --campaign "campaign1" > log.obr_run-postProcessLogs 2>&1 || exit 1
-    obr status --folder archive --sort_by nCorrectors,solver --extra TimeStep,SolveP,MomentumPredictor,PISOStep,solver_p,p_NoIterations,p_FinalResidual,PIMPLEIteration,PIMPLE_count --export_to json > results.json
-fi
+for i in "${!CASES[@]}"; do
+    case="${CASES[$i]}"
+    yaml="${YAMLS[$i]}"
+
+    echo "[INFO] Initialising case: $case"
+    
+    mkdir -p "${case}_${CAMPAIGN_NAME}"
+    cp -r "$case/assets" "${case}_${CAMPAIGN_NAME}/"
+    cp -r "$case/templates" "${case}_${CAMPAIGN_NAME}/"
+    ln -s "../$case/basicSetup" "${case}_${CAMPAIGN_NAME}/basicSetup"
+    pushd "${case}_${CAMPAIGN_NAME}" > /dev/null
+    if [ ! -f .init_complete ]; then
+        obr init -c "assets/$yaml" || { echo "[ERROR] init failed"; exit 1; }
+	touch .init_complete
+    fi
+    popd > /dev/null
+done
+
+for i in "${!CASES[@]}"; do
+    case="${CASES[$i]}"
+    njobs="${NJOBSPERSTUDY[$i]}"
+    case_dir="${case}_${CAMPAIGN_NAME}"
+
+    echo "$njobs" > "$case_dir/.expected_jobs"
+
+    pushd "$case_dir" > /dev/null
+    sbatch ../submit_allstudies.sh
+    popd > /dev/null
+done
+
+# Main loop: keep looping until all cases are submitted
+while [[ $ALL_SUBMITTED -eq 0 ]]; do
+    ALL_SUBMITTED=1  # assume all done unless we find one not done
+
+    for i in "${!CASES[@]}"; do
+	case_dir="${CASE_DIRS[$i]}"
+	njobs="${NJOBSPERSTUDY[$i]}"
+        # Already submitted?
+        if [[ -f "${case_dir}/.submitted" ]]; then
+            continue
+        fi
+
+        # Generation complete?
+        if [[ -f "${case_dir}/.generation_complete" ]]; then
+            echo "[INFO] Submitting studies for $case_dir"
+
+            wait_for_slots "$njobs" # Wait for job slots
+
+            pushd "$case_dir" > /dev/null
+
+            # Run CUDA submission
+            obr submit --filter executor==cuda --partition accelerated --time "04:00:00" \
+                --template ../scheduler_templates/horeka_ranksPerGPU.sh -o simulate \
+                --scheduler_args "account hk-project-exasim gpus_per_node 4" --max_queue_size 100
+
+            sleep 10  # Optional: give scheduler a breather
+
+            # Run CPU submission
+            obr submit --filter executor==CPU --partition cpuonly --time "04:00:00" \
+                --template ../scheduler_templates/horeka_new.sh -o simulate \
+                --scheduler_args "account hk-project-exasim tasks_per_node 76" --max_queue_size 100
+
+            touch .submitted
+            echo "[INFO] Submission complete for $case_dir"
+
+            popd > /dev/null
+        else
+            echo "[WAIT] $case_dir not ready yet (waiting for .generation_complete)"
+            ALL_SUBMITTED=0
+        fi
+    done
+
+    if [[ $ALL_SUBMITTED -eq 0 ]]; then
+        echo "[LOOP] Not all cases submitted yet. Waiting $CHECK_INTERVAL seconds before retry..."
+        sleep "$CHECK_INTERVAL"
+    fi
+done
+
+echo "[DONE] All studies submitted."
