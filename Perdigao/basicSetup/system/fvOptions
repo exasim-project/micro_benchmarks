@@ -1,0 +1,68 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvOptions;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+// calculate velocity magnitude value at inlet
+Uref            #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+/*
+velocityDamping
+{
+    type            velocityDampingConstraint;
+    selectionMode   all;
+    UMax            #eval{ 4.0*$Uref };
+}
+*/
+pressureGradient
+{
+    type                vectorSemiImplicitSource;
+    selectionMode       all;
+    volumeMode          specific;
+    sources
+    {
+        //U ((0.0003595842 0.00117614694 0) 0);      // Geostrohpic forcing: u*fc=dp/dy , -v*fc=dp/dx
+        U ((0.0002996535 0.00098012245 0) 0);      // Geostrohpic forcing: u*fc=dp/dy , -v*fc=dp/dx
+        //U ((0 0.00117614694 0) 0);      // Geostrohpic forcing: rho*u*fc=dp/dy , -rho*v*fc=dp/dx
+        //U ((0 1.978046e-03  0) 0);
+    }
+    //dp/dy(u=10.09m/s)=0.00112814195
+    //dp/dy(u=11)=0.00122988716
+    //Ug=11m/s @ 242°: u=10.5193523156 -> dp/dy=0.00117614694 , v=3.21608875195 -> dp/dx=-0.0003595842
+}
+
+atmCoriolisUSource1
+{
+    type            atmCoriolisUSource;
+    selectionMode   all;
+//    latitude                   39.7072;
+//    planetaryRotationPeriod    23.9344694;
+    Omega           ( 0 0 4.658663e-05 );  // fc(Perdigao)=9.317327e-05 rad/s in OpenFOAM Omega=fc/2
+//    Omega           (0 0 5.65156e-05);  // forestStability tutorial
+}
+/*
+acousticDampingSource
+{
+    type                acousticDampingSource;
+    active              yes;
+    selectionMode       all;
+    origin              (0 0 -100000);
+    radius1             103000;
+    radius2             103500;
+    frequency           0.001;
+    URef                U;
+}
+*/
+// ************************************************************************* //

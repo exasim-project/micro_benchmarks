@@ -1,0 +1,171 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      T;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include        "${FOAM_CASE}/system/include/caseDefinition"    
+
+dimensions      [0 0 0 1 0 0 0];
+
+internalField  #codeStream
+{
+    code
+    #{
+        const IOdictionary& d = static_cast<const IOdictionary&>(dict);
+        const fvMesh& mesh = refCast<const fvMesh>(d.db());
+        //scalarField T(mesh.nCells(), Zero);
+        tmp<scalarField> tT(new scalarField(mesh.nCells(), 0.0));
+        scalarField& T = tT.ref();  // safe here because tT is not const
+        forAll(T,cellI)
+        {
+            scalar z = mesh.C()[cellI].z();
+            //T[cellI] = $Tbottom;
+            if ((z >= $zInversion - 0.5*$inversionWidth) && (z <= $zInversion + 0.5*$inversionWidth))
+            {
+                T[cellI] = $Tbottom + (($Ttop - $Tbottom)/Foam::max($inversionWidth,1.0E-10)) * (z -($zInversion - 0.5*$inversionWidth));
+            }
+            else if (z > $zInversion + 0.5 * $inversionWidth)
+            {
+                T[cellI] = $Ttop + $TGradUpper * (z - ($zInversion + 0.5*$inversionWidth));
+            }
+            else 
+            {
+                T[cellI] = $Tbottom;
+            }
+        }
+        tT().writeEntry("", os);
+        //T.writeEntry("", os);
+    #};
+
+    //! Optional:
+    codeInclude
+    #{
+        #include "fvCFD.H"
+    #};
+
+    //! Optional:
+    codeOptions
+    #{
+        -I$(LIB_SRC)/finiteVolume/lnInclude \
+        -I$(LIB_SRC)/meshTools/lnInclude
+    #};
+    codeLibs
+    #{
+        -lfiniteVolume \
+        -lmeshTools
+    #};
+};
+
+boundaryField
+{
+    "ww.*"
+    {
+        type            atmTurbulentHeatFluxTemperature;
+        heatSource      flux;
+        alphaEff        alphaEff;
+        Cp0             1005.0;
+        q               uniform 0.0;
+        value           uniform $Tbottom;
+    }
+
+    upper
+    {
+        type            fixedGradient;
+        gradient        uniform $TGradUpper;
+    }
+
+    io_southwest
+    {
+        name    cappingInv;
+        type    codedFixedValue;
+
+        code
+        #{
+            // Uncomment for testing on non-windows systems [fragile]
+            // IOobject::scopeSeparator = '_';
+            const fvPatch& boundaryPatch = this->patch();
+            scalarField& T = *this;
+            scalar Tbottom = 300;
+            scalar Ttop = 305;
+            scalar inversionWidth = 100;
+            scalar zInversion = 1500;
+            scalar TGradUpper = 0.003;
+            forAll(T,faceI)
+            {
+                scalar z = boundaryPatch.Cf()[faceI].z();
+                if ((z >= zInversion - 0.5*inversionWidth) && (z <= zInversion + 0.5*inversionWidth))
+                {
+                    T[faceI] = Tbottom + ((Ttop - Tbottom)/Foam::max(inversionWidth,1.0E-10)) * (z -(zInversion - 0.5*inversionWidth));
+                }
+                else if (z > zInversion + 0.5 * inversionWidth)
+                {
+                    T[faceI] = Ttop + TGradUpper * (z - (zInversion + 0.5*inversionWidth));
+                }
+                else 
+                {
+                    T[faceI] = Tbottom;
+                }
+            }
+            operator==(T);
+        #};
+
+        value           uniform $Tbottom;
+    }
+    "(io_northeast|io_northwest|io_southeast)"
+    {
+        type     zeroGradient;
+    }
+    "oo_.*"
+    {
+        type     zeroGradient;
+    }
+    // free-slip wall
+    "ws_.*"
+    {
+        type            slip;
+    }
+
+    // symmetry
+    "sm_.*"
+    {
+        type            symmetry;
+    }
+
+    // cyclic (fully matching)
+    "cc_.*"
+    {
+        type            cyclic;
+    }
+
+    // cyclic (interpolation via AMI)
+    "ca_.*"
+    {
+        type            cyclicAMI;
+    }
+
+    processor
+    {
+        type  processor;
+        value uniform $Tbottom;
+    }
+
+    processorCyclic
+    {
+        type  processorCyclic;
+        value uniform $Tbottom;
+    }
+
+}
+
+
+// ************************************************************************* //

@@ -1,0 +1,58 @@
+#!/bin/bash -l
+### Script for running UCFD template for incompressible external / automotive DES
+### Upstream CFD, 2023
+
+# ---- FUNCTION DEFINITIONS ---------------------------------------------------------------- #
+
+# function to read parameters from caseDefinition...
+function getInputParam ()
+{
+    varVal=`grep -w ${1} system/include/caseDefinition | cut -d ";" -f 1 | grep -v '//'`
+    varVal=`echo ${varVal:${#1}}`
+    echo $varVal
+}
+
+# read selected variables from caseDefinition file
+solverSRSinit=`getInputParam solverSRSinit`
+
+
+function writeLog() 
+{
+    # first argument is the filename prefix
+    local logDir="logFiles"
+    local logFile="$1.$(date "+%Y-%m-%d_%H-%M-%S").log"
+    mkdir -p $logDir
+    ln -sf $logFile $logDir/$1.latest.log
+    echo $logDir/$logFile
+}
+
+# ---- USER INPUTS ------------------------------------------------------------------------- #
+
+# command for parallel execution
+#parEx='srun'
+
+# ---- simulation settings / best practices
+# best practices for discretisation schemes, either robust or accurate
+#schemesOption="robust"
+schemesOption="accurate"
+
+# best practices for solver settings, either stable or fast
+#solverOption="stable"
+solverOption="fast"
+
+
+# ---- END USER INPUTS --------------------------------------------------------------------- #
+
+
+echo -e -n '\n    Running transient SRS ...\n'
+(
+    cp system/fvSchemes.SRS.${schemesOption} system/fvSchemes
+    cp system/fvSolution.SRS.${solverOption} system/fvSolution
+    cp system/controlDict.init system/controlDict
+)
+
+# ${parEx} changeDictionary -dict system/changeDictionaryDict.DFSEM -parallel > "$(writeLog 07_changeDictionary)" 2>&1 || exit 1
+${parEx} ${solverSRSinit} -parallel > "$(writeLog 06_${solverSRSinit})" 2>&1 || exit 1
+
+
+# ---- END OF FILE ------------------------------------------------------------------------- #

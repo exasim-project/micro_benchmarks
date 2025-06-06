@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# name of log folder
+logDir="logFiles"
+
+# run Python plotting scripts
+./plot_monitor_mast_data.py > ${logDir}/log.plot_monitor_mast_data.py 2>&1 || exit 1
+${parEx} postProcess -func cuttingPlanes -dict system/controlDict.post -parallel -latestTime > "$(writeLog 08_postProcess)" 2>&1 || exit 1
+./plot_monitor_transect_data_DLR_plane.py > ${logDir}/log.plot_monitor_DLR_plane.py 2>&1 || exit 1
+./plot_monitor_transect_data_DTU_plane.py > ${logDir}/log.plot_monitor_DTU_plane.py 2>&1 || exit 1

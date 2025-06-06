@@ -1,0 +1,91 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      turbulenceProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+simulationType  LES;
+
+LES
+{
+    LESModel        $turbModelSRS;
+
+    SpalartAllmarasDDESDevCoeffs
+    {
+        shielding    $shieldingMode;
+        useSigma     $activateGAM;
+        C1            1.44;
+        C2            1.92;
+    }
+
+    kOmegaSSTDDESDevCoeffs
+    {
+        shielding    $shieldingMode;
+        useSigma     $activateGAM;
+        C1            1.44;
+        C2            1.92;
+    }
+
+    SpalartAllmarasDDESCoeffs
+    {
+        useSigma     $activateGAM;
+        C1            1.44;
+        C2            1.92;
+    }
+
+    kOmegaSSTDDESCoeffs
+    {
+        useSigma     $activateGAM;
+        C1            1.44;
+        C2            1.92;
+    }
+
+    SpalartAllmarasIDDESCoeffs
+    {
+        useSigma     $activateGAM;
+        C1            1.44;
+        C2            1.92;
+    }
+
+    kOmegaSSTIDDESCoeffs
+    {
+        useSigma     $activateGAM;
+        C1            1.44;
+        C2            1.92;
+    }
+
+    kEqnABLCoeffs
+    {
+        Ce              0.93;
+        Ck              0.0673;
+    }
+    
+    smoothCoeffs
+    {
+        delta           cubeRootVol;
+        cubeRootVolCoeffs
+        {
+            deltaCoeff      1;
+        }
+        maxDeltaRatio   1.1;
+    }
+  
+    delta           $deltaSRS;
+
+    turbulence      on;
+    printCoeffs     on;
+}
+
+// ************************************************************************* //

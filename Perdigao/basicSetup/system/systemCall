@@ -1,0 +1,39 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2212                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      systemCall;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+system
+{
+    type            systemCall;
+    libs            ( utilityFunctionObjects );
+
+    master          true;
+    enabled         true;
+
+    timeStart       #eval "$:runControl.timeSeriesInfo.CTU*$:runControl.timeSeriesInfo.minRunCTU";
+    writeControl    onEnd;
+    executeControl  runTime;
+    executeInterval $:runControl.interval;
+
+    executeCalls    ( "of_watchdog.sh" );
+    endCalls
+    (
+        "of_post_run.sh"
+        "of_post_run.sh -m --taverage -o evolution_avg"
+    );
+}
+
+
+// ************************************************************************* //

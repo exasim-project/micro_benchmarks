@@ -1,0 +1,47 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2312                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      setFieldsDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+defaultFieldValues
+(
+    //volVectorFieldValue U (38.889 0 0)
+);
+
+regions
+(
+    // Set cell values
+    // (does zerogradient on boundaries)
+    boxToCell
+    {
+        box (-10000 -10000 #eval "$zInversion+ 0.5 * $inversionWidth") (10000 10000 5000);
+        fieldValues
+        (
+            volScalarFieldValue T #eval "$Ttop + $TGradUpper * (pos().z - ($zInversion + 0.5*$inversionWidth))"
+        );
+    }
+    boxToCell
+    {
+        box (-10000 -10000 #eval "$zInversion- 0.5 * $inversionWidth") (10000 10000 #eval "$zInversion- 0.5 * $inversionWidth");
+        fieldValues
+        (
+            volScalarFieldValue T #eval "$Tbottom + (($Ttop - $Tbottom)/$inversionWidth) * (pos().z -($zInversion - 0.5*$inversionWidth))"
+        );
+    }
+);
+
+
+// ************************************************************************* //
+

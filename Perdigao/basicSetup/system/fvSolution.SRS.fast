@@ -1,0 +1,128 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+solvers
+{
+    "(p|p_rgh)"
+    {
+            solver                  GAMG;
+            preconditioner          none;
+            smoother                symGaussSeidel;
+            nPreSweeps              0;
+            nPostSweeps             2;
+            cacheAgglomeration      on;
+            agglomerator            faceAreaPair;
+            nCellsInCoarsestLevel   10;
+            mergeLevels             1;
+            coarsestLevelCorr
+            {
+                solver          PPCG;
+                preconditioner  DIC;
+                relTol          0.1;
+            } 
+        tolerance        0.0;
+        relTol           1e-2;
+        minIter          1;
+//        maxIter          50;
+    }
+
+    "(pFinal|p_rghFinal)"
+    {
+        $p;
+        tolerance        5e-6;
+        relTol           0.0;
+    }
+
+    "(U|T|k|omega|nuTilda)"
+    {
+        solver           PBiCGStab;
+        preconditioner   DILU;
+        tolerance        0.0;
+        relTol           1e-2;
+        minIter          1;
+        maxIter          5;
+    }
+
+    "UFinal"
+    {
+        $U;
+        tolerance        1e-8;
+        relTol           0.0;
+    }
+
+    "(T|k|omega|nuTilda)Final"
+    {
+        $U
+        relTol           1e-3;
+    }
+
+    // note: solver settings for potentialFoam
+    Phi
+    {
+        solver                    GAMG;
+        tolerance                 1e-7;
+        relTol                    0.05;
+        smoother                  GaussSeidel;
+        nPreSweeps                0;
+        nPostSweeps               2;
+        cacheAgglomeration        on;
+        agglomerator              faceAreaPair;
+        nCellsInCoarsestLevel     50;
+        mergeLevels               1;
+    };
+}
+
+potentialFlow
+{
+    nNonOrthogonalCorrectors   10;
+}
+
+PIMPLE
+{
+    nOuterCorrectors           5;
+    nCorrectors                1;
+    nNonOrthogonalCorrectors   0;
+    turbOnFinalIterOnly        true;
+    finalOnLastPimpleIterOnly  true;
+    pRefPoint                (-3000 0 200);
+    pRefValue                 0;
+
+    // experimental custom solver features
+    beta_t_CoLimited           true;
+    beta_limField              true;
+    beta_limFieldName          "DEShybridDev:Factor";
+
+}
+
+relaxationFactors
+{
+    fields
+    {
+        "(p|p_rgh|pFinal|p_rghFinal)"   0.5;
+    }
+
+    equations
+    {
+        "(U|UFinal)"                       0.7;
+        "(k|epsilon|omega|nuTilda)"        1.0;
+        "(k|epsilon|omega|nuTilda)Final"   1.0;
+        "(T|TFinal)"                       0.3; 
+    }
+}
+
+// ************************************************************************* //

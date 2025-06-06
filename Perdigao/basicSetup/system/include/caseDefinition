@@ -1,0 +1,75 @@
+// Geometrical parameters:
+lref                2200;                 // reference length (in m) - domain halfheight
+Aref                0.1124;               // reference area (in m^2) - frontal area
+
+// Meshing paramaters:
+BLthickness         1280;                   // Boundary layer thicknes (in m)  
+nBL_upstream        4.5;
+nBL_downstream      4.0; 
+nBL_sides           3.5;
+zMin                114.791;                // minimum z-coordinate (in m)
+zMax                4146.791;               // maximum z-coordinate (in m)
+resolution           64;                    // Level 0 resolution (in m)
+levelInc             0;                     // Increase cell level by levelInc for debugging purposes
+
+// Flow parameters:
+Uxref               11;                     // reference velocity x-component at inlet (in m/s)
+Uyref               0.0;                      // reference velocity y-component at inlet (in m/s)
+Uzref               0.0;                      // reference velocity z-component at inlet (in m/s)
+nuref               1.44e-05;                 // reference molecular kinematic viscosity (in m^2/s)
+pref                0.0;                      // reference kinematic pressure at outlet (in m^2/s^2)
+roughness_z0        1.0;                     // Wall roughness parameter for ABL (in m)
+Tref                300.0;                      // reference temperature (in K)
+nocyclic            false;                      // Use patches on side walls 
+
+// Capping inversion parameters
+TGradUpper           0.003;                       // Potential temperature gradient above the strong inversion (K/m).
+zInversion           1500.0;                       // Height of the middle of the initial strong capping inversion (m).
+inversionWidth       100.0;                       // Vertical width of the intial strong capping inversion (m).
+Tbottom              300.0;                       // Initial potential temperature at bottom of strong capping inversion (K).
+Ttop                 305.0;                       // Initial potential temperature at top of strong capping inversion (K).
+
+// Turbulence model settings:
+turbModelRANS       kEpsilon;          // turbulence model for RANS (SpalartAllmaras|kOmegaSST)
+turbModelSRS        kEqnABL;      // turbulence model for SRS (SpalartAllmarasDDESDev|kOmegaSSTDDESDev|SpalartAllmarasIDDES|kOmegaSSTIDDES)
+exactWallDist       false;                    // Toggle usage of exactDistance for wallDist calculation method
+deltaSRS            smooth;          // filter width formulation for SRS (DeltaOmegaTilde|IDDESDelta)
+activateGAM         true;                     // select sigma-DDES variant instead of std. DDES
+shieldingMode       std;                      // shielding formulation (std|Deck)
+viscRatio           5.0;                      // Turbulent viscosity ratio at inlet (-)
+Tu                  0.1;                   // Turbulence intensity at inlet
+
+// Simulation settings:
+dt1                 2e-1;                     // time step size (in s)
+dt2                 2e-2;                     // time step size (in s)
+tInit               1480;                      // time when to start averaging (in s)
+tAvg                1520;                      // time when to start averaging (in s)
+tEnd                1482;                      // end time of simulation (in s)
+nIterRANS           3800;                       // iterations for RANS
+convCrit            1.0e-08;                  // convergence criterion for steady-state RANS
+fieldOutInterval    200;                      // write interval for output of OpenFOAM fields
+decoMethod          kahip;                    // method used for domain decomposition (scotch|kahip)
+nCores              128;                       // number of cores used for simulation
+
+// Solver settings:
+solverRANS          buoyantBoussinesqSimpleFoam;           // steady-state solver for RANS
+solverSRSinit       buoyantBoussinesqPimpleALMFoam;           // transient solver for SRS
+solverSRS           buoyantBoussinesqPimpleALMFoam;           // transient solver for SRS
+pSolverPCG          false;                    // switch for linear pressure solver (GAMG if false, PCG if true)
+
+// ----------------------
+// ALM settings:                                // must be set in turbineArrayProperties, because the order of entries seems to matter in SOWFA
+// ----------------------
+radius              41;
+HubRad              1.5;
+azi                 270;                          // azimuth angle of blade 1 (in degrees), copy for restart from postProcessing/turbineOutput/"latestTimeStep"/rotorAzimuth 
+pitch               0.0;                       // blade pitch (in degrees)
+rpm                 16.87;                       // rotational speed (in 1/min)
+relThickTip         0.12;                           // relative thickness at blade tip
+DeltaALM            2;                      // Cell size in ALM region. Should be 7 - 10 grid points over chord at blad tip
+DeltaAPRatio        1.2;                        // ratio of grid Delta and actuator point delta. Determines number of point in radial direction. Should be between 1.2 and 1.5
+nBladePoints        #eval{ceil(($radius-$HubRad)/($DeltaALM/$DeltaAPRatio))};
+                                                // number of actuatore points per blade
+epsilonScaleFactors (0.85 #eval{0.2/$relThickTip} 2.0); // factors (a_c, a_t, a_r) to define force projection width, which will be muliplied with chord, thikness and delta r
+keepALMRotorOn1Proc false;                       // switch to keep cells effected by ALM on 1 processor
+
