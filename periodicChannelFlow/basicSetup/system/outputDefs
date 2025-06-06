@@ -73,4 +73,20 @@ Urms_max
     fields          (UPrime2Mean);
 }
 
+pRMS_max
+{
+    type            volFieldValue;
+    libs            ("libfieldFunctionObjects.so");
+
+    log             false;
+    writeControl    timeStep;
+    writeInterval   1;
+    writeFields     false;
+
+    regionType      all;
+
+    operation       max;
+    postOperation   mag;
+    fields          (pPrime2Mean);
+}
 // ************************************************************************* //

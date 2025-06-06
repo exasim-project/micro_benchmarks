@@ -18,5 +18,22 @@ numberOfSubdomains  64;
 
 method          scotch;
 
+constraints
+{
+    preservePatches
+    {
+        type            preservePatches;
+        patches         ( 
+                        sides1_half0
+                        sides2_half0
+                        sides1_half1
+                        sides2_half1 
+                        inout1_half0
+                        inout2_half1
+                        inout1_half1
+                        inout2_half0
+                        );
+    }
+}
 writeCells    true;
 // ************************************************************************* //

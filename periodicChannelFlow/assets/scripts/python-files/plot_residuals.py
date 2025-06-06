@@ -36,14 +36,14 @@ df = pd.concat((pd.read_csv(filename,sep='\t',comment='#',header=None, names=hea
 
 ax = df.plot.line(x='Time',y=[col for col in df.columns if 'initial' in col],logy=True,ylabel='initial residual')
 ax.set_ylim([1e-10,1])
-plt.savefig('fig_solverInfo_initialResidual.png',dpi=450, facecolor='w', edgecolor='w', orientation='portrait', bbox_inches='tight', pad_inches=0.1)
+plt.savefig('../plots/fig_solverInfo_initialResidual.png',dpi=450, facecolor='w', edgecolor='w', orientation='portrait', bbox_inches='tight', pad_inches=0.1)
 
 ax = df.plot.line(x='Time',y=[col for col in df.columns if 'final' in col],logy=True,ylabel='final residual')
 ax.set_ylim([1e-10,1])
-plt.savefig('fig_solverInfo_finalResidual.png',dpi=450, facecolor='w', edgecolor='w', orientation='portrait', bbox_inches='tight', pad_inches=0.1)
+plt.savefig('../plots/fig_solverInfo_finalResidual.png',dpi=450, facecolor='w', edgecolor='w', orientation='portrait', bbox_inches='tight', pad_inches=0.1)
 
 ax = df.plot.line(x='Time',y=[col for col in df.columns if 'iters' in col],logy=True,ylabel='linear iterations')
 ax.set_ylim([1,50])
-plt.savefig('fig_solverInfo_iters.png',dpi=450, facecolor='w', edgecolor='w', orientation='portrait', bbox_inches='tight', pad_inches=0.1)
+plt.savefig('../plots/fig_solverInfo_iters.png',dpi=450, facecolor='w', edgecolor='w', orientation='portrait', bbox_inches='tight', pad_inches=0.1)
 
 plt.close('all')
