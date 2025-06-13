@@ -1,0 +1,81 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+//#include        "${FOAM_CASE}/system/runControl"
+
+libs            
+(
+    distributed
+    SOWFAturbulenceModels
+    SOWFAincompressibleTurbulenceModels
+    SOWFARotorModelsStandard
+    OGL 
+);
+
+application       $solverSRS;
+
+startFrom         latestTime;
+startTime         0;
+stopAt            endTime;
+
+endTime           $tEnd;
+deltaT            $dt2;
+
+writeControl      timeStep;
+writeInterval     $fieldOutInterval;
+
+purgeWrite        2;   
+
+writeFormat       binary;
+writePrecision    15;
+writeCompression  off;
+
+timeFormat        general;
+timePrecision     #calc "name($deltaT).substr(name($deltaT).find('.')+1).size()+name($endTime).substr(0,name($endTime).find('.')).size()";
+#message "Time precision: $timePrecision";
+
+runTimeModifiable true;
+
+OptimisationSwitches
+{
+    fileModificationSkew  60;
+}
+
+functions
+{
+    // SIMULATION RUN-TIME CONTROL
+    //#include "systemCall"
+    //#include "abort"
+
+    // STANDARD OUTPUTS
+    #include "outputDefs/volFields"
+    #include "outputDefs/wallFields"
+    #include "outputDefs/solverInfo"
+    #include "outputDefs/fieldMinMax"
+    #include "outputDefs/fieldAverage"
+
+    #include "outputDefs/mast20_tse04"
+    #include "outputDefs/mast25_tse09"
+    #include "outputDefs/mast29_tse13"
+    #include "outputDefs/mast32_rsw01"
+    #include "outputDefs/mast37_rsw06"
+
+    // OPTIONAL OUTPUTS
+    #include "outputDefs/DESFields"
+}
+
+// ************************************************************************* //

@@ -1,0 +1,64 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2412                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    arch        "LSB;label=32;scalar=64";
+    class       dictionary;
+    location    "system/outputDefs";
+    object      cuttingPlanes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Note: Used to define unsteady simulation outputs such as e.g. patches, 
+//       cutting planes, iso-surfaces
+
+cuttingPlanes
+{
+    type                surfaces;
+    libs                ( "libsampling.so" );
+    writeControl        writeTime;
+
+    interpolationScheme cellPoint;
+    surfaceFormat       vtk;
+
+    fields
+    (
+        p
+        U
+        vorticity
+        nut
+    );
+
+    surfaces
+    (
+        DTU_plane
+        {
+            type            cuttingPlane;
+            planeType       pointAndNormal;
+            pointAndNormalDict
+            {
+                point       (-2914.29176039 349.97497967 0);
+                normal      (872.3707174252941 5179.304381517184 0);
+            }
+        }
+
+        DLR_plane
+        {
+            type            cuttingPlane;
+            planeType       pointAndNormal;
+            pointAndNormalDict
+            {
+                point       (-5606.28256594 1193.21425041 0);
+                normal      (1958.9397625004017 9295.835360212572 0);
+            }
+        }
+    );
+}
+// ************************************************************************* //

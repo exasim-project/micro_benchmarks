@@ -1,0 +1,47 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Version:  v1912
+    \\  /    A nd           | Website:  www.openfoam.com
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+Description
+    Writes out values of fields from cells nearest to specified locations.
+
+\*---------------------------------------------------------------------------*/
+
+mast29_tse13
+{
+    type            probes;
+    libs            ("libsampling.so");
+
+    // Name of the directory for probe data
+    name            mast29_tse13;
+    
+    // Write at same frequency as fields
+    writeControl    timeStep;
+    writeInterval   1;
+
+    // Fields to be probed
+    fields          (U);
+
+    // Optional: do not recalculate cells if mesh moves
+    fixedLocations  true;
+
+    // Optional: interpolation scheme to use (default is cell)
+    interpolationScheme cell;
+
+    probeLocations
+    (
+        (719.68416696 -259.49403223 472.9)    // base height 452.9 + instrument height 20m
+        (719.68416696 -259.49403223 492.9)    // base height 452.9 + instrument height 40m
+        (719.68416696 -259.49403223 512.9)    // base height 452.9 + instrument height 60m
+        (719.68416696 -259.49403223 532.9)    // base height 452.9 + instrument height 80m
+        (719.68416696 -259.49403223 552.9)    // base height 452.9 + instrument height 100m
+    );
+
+    // Optional: filter out points that haven't been found. Default
+    //           is to include them (with value -VGREAT)
+    includeOutOfBounds  true;
+}
+// ************************************************************************* //

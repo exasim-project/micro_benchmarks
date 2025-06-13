@@ -1,0 +1,25 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2306                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+Uref                 8.3;
+Zref                 80;
+zDir                 (0 0 1);
+flowDir              (1 0 0);
+z0                   uniform 0.06;
+d                    uniform 0.0;
+
+// Optional (inherited) entries (unmodifiable)
+kappa           0.41;
+Cmu             0.09;
+initABL         true;
+phi             phi;
+C1              0.0;
+C2              1.0;
+
+// ************************************************************************* //
+

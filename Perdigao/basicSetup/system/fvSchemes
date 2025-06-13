@@ -1,0 +1,96 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+// calculate velocity magnitude value at inlet
+Uref            #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+
+ddtSchemes
+{
+    default                       bounded backward 1;
+}
+
+gradSchemes
+{
+    default                       Gauss linear;
+    grad(U)                       cellLimited Gauss linear 1;
+    grad(T)                       cellLimited Gauss linear 1;
+    grad(k)                       cellLimited Gauss linear 1;
+    grad(omega)                   cellLimited Gauss linear 1;
+    grad(nuTilda)                 cellLimited Gauss linear 1;
+}
+
+divSchemes
+{
+    default                       none;
+
+    div(phi,U)                    bounded Gauss deferredCorrection filteredLinear2V 0.1 0; /*DEShybrid
+        deferredCorrection filteredLinear2V 0.1 0  // scheme 1
+        linearUpwindV grad(U)                      // scheme 2
+        delta                                      // LES delta name, e.g. 'delta', 'hmax'
+        0.65                                       // DES coefficient, typically = 0.65
+        $Uref                                      // reference velocity scale (in m/s)
+        $lref                                      // reference length scale (in m)
+        0.0                                        // Minimum sigma limit (0-1)
+        1.0                                        // Maximum sigma limit (0-1)
+        1.0                                        // Limiter of B function
+        10.0;                                      // nut limiter (if > 1, GAM extension is active)
+    */
+    div(phi,T)                    bounded Gauss upwind;
+
+    turbulence                    bounded Gauss upwind;
+    div(phi,k)                    $turbulence;
+    div(phi,omega)                $turbulence;
+    div(phi,nuTilda)              $turbulence;
+
+    div((nuEff*dev2(T(grad(U))))) Gauss linear;
+}
+
+laplacianSchemes
+{
+    default                       Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+    default                       linear;
+}
+
+snGradSchemes
+{
+    default                       corrected;
+}
+
+fluxRequired
+{
+    default                       no;
+    p;
+    p_rgh;
+}
+
+wallDist
+{
+    #if $exactWallDist
+        method                    exactDistance;
+    #else
+        method                    meshWave;
+    #endif
+    nRequired                     true;
+    updateInterval                0;
+}
+
+// ************************************************************************* //
