@@ -1,0 +1,50 @@
+case:
+    type: GitRepo
+    url: https://develop.openfoam.com/committees/hpc.git
+    folder: incompressible/simpleFoam/occDrivAerStaticMesh
+    cache_folder: ${{env.drivaer}}
+    commit: 84c262431117f5c921db8335e368a12d0e9fa3f0
+    post_build:
+      # NOTE Need to create fvSolution first
+    uses:
+      - fvSolution: fvSolution.fixedIter
+      - controlDict: controlDict.noWrite
+    post_build:
+      - controlDict:
+        writeFormat: binary
+        libs: ["libOGL.so"]
+pre_cmds:
+          - potentialFoam -initialiseUBCs
+          - applyBoundaryLayer ybl "0.0450244"
+          - renumberMesh -overwrite
+post_cmds: 
+          - postProcess -func yPlus
+          - postProcess -func Q -latestTime
+variation:
+  - operation: replaceMesh
+    schema: "mesh/{mesh}"
+    common:
+      path: /hkfs/home/project/hk-project-test-fine/eq4036/data/code/driveaer/assets 
+    values:
+      - mesh: S
+    variation:
+     - operation: decomposePar
+       schema: "nodes_1"
+       values:
+         - method: multiLevel
+           methods: ["scotch", "scotch", "scotch"]
+           numberOfSubdomains: 32
+           levels: ["nodes", "gpu", "cpu"]
+           distribution: ["auto", 8, 4]
+       variation:
+         - operation: fvSolution
+           schema: "exec_{executor}"
+           values:
+             - set: solvers/p
+               executor: CPU
+             - set: solvers/p
+               executor: hip
+               solver: GKOCG 
+               preconditioner: BJ 
+               ranksPerGPU: 32 
+               verbose: 1
