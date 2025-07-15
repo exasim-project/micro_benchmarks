@@ -1,0 +1,26 @@
+// Flow parameters:
+Uxref               15.06;                    // reference velocity x-component at inlet (in m/s)
+Uyref               0.0;                      // reference velocity y-component at inlet (in m/s)
+Uzref               0.0;                      // reference velocity z-component at inlet (in m/s)
+nuref               1.53e-05;                 // reference molecular kinematic viscosity (in m^2/s)
+pref                0;                        // reference kinematic pressure at outlet (in m^2/s^2)
+
+// Turbulence model settings:
+turbModelRANS       kOmegaSST;                // turbulence model for RANS (SpalartAllmaras|kOmegaSST)
+shieldingMode       std;                      // shielding formulation (std|Deck)
+viscRatio           5.0;                      // Turbulent viscosity ratio at inlet (-)
+Tu                  0.003;                    // Turbulence intensity at inlet
+
+// Simulation settings:
+dt                  3.92e-4;                  // time step size (in s)
+tEnd                4.2728;                   // end time of simulation (in s)         // after 35 rotation (0,14114326 s per Rotation)
+nIterRANS           20000;                    // iterations for RANS
+convCrit            1.0e-08;                  // convergence criterion for steady-state RANS
+fieldOutInterval    100;                      // write interval for output of OpenFOAM fields
+nCores              32;                      // number of cores used for simulation
+
+// Solver settings:
+solverRANS          simpleFoam;               // steady-state solver for RANS
+solverSRS           pimpleALMFoam;            // transient solver for SRS
+pSolverPCG          false;                    // switch for linear pressure solver (GAMG if false, PCG if true)
+

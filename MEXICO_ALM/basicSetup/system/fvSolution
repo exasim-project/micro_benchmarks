@@ -1,0 +1,133 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    cellDisplacement
+    {
+        solver          PCG;
+        preconditioner  DIC;
+        tolerance       1e-06;
+        relTol          0;
+        maxIter         100;
+    }
+    p
+    {
+        solver                  GAMG;
+        smoother                GaussSeidel;
+        nCellsInCoarsestLevel   50;
+        coarsestLevelCorr
+        {
+            solver          PPCR;
+            preconditioner  DIC;
+            relTol          0.05;
+        } 
+        tolerance        1e-99;
+        relTol           1e-2;
+        minIter          1;
+    }
+    pFinal
+    {
+        $p;
+    }
+
+    pcorr
+    {
+        $p;
+    }
+
+    pcorrFinal
+    {
+        $pcorr;
+    }
+
+    "(U|k|omega|nuTilda)"
+    {
+        solver           PBiCGStab;
+        preconditioner   DILU;
+        tolerance        1e-99;
+        relTol           1e-1;
+        minIter          1;
+        maxIter          5;
+    }
+
+    "(U|k|omega|nuTilda)Final"
+    {
+        $U;
+    }
+
+    // note: solver settings for potentialFoam
+    Phi
+    {
+        solver                    GAMG;
+        tolerance                 1e-7;
+        relTol                    0.05;
+        smoother                  GaussSeidel;
+        nPreSweeps                0;
+        nPostSweeps               2;
+        cacheAgglomeration        on;
+        agglomerator              faceAreaPair;
+        nCellsInCoarsestLevel     50;
+        mergeLevels               1;
+    }
+}
+
+potentialFlow
+{
+    nNonOrthogonalCorrectors   10;
+}
+
+PIMPLE
+{
+    momentumPredictor          yes;
+    nOuterCorrectors           30;
+    nCorrectors                1;
+    nNonOrthogonalCorrectors   0;
+    turbOnFinalIterOnly        false;
+    checkMeshCourantNo         true;
+
+    residualControl
+    {
+        p
+        {
+            tolerance 0;
+            relTol    1e-1;
+        }
+ 
+        U
+        {
+            tolerance 0;
+            relTol    1e-3;
+        }
+    }
+}
+
+relaxationFactors
+{
+    fields
+    {
+        "(p|pFinal)"               0.4;
+    }
+
+    equations
+    {
+        "(U|UFinal)"               0.7;
+        "(k|omega|nuTilda)"        0.7;
+        "(k|omega|nuTilda)Final"   0.7; 
+    }
+}
+
+// ************************************************************************* //

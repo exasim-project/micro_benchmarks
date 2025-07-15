@@ -1,0 +1,189 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.0.x                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      turbineProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+//- Number of blades;
+NumBl                       3;
+
+//- Distance from rotor apex to blade tip (m).
+TipRad                     2.25;
+
+//- Distance from rotor apex to blade root (m).
+HubRad                      0.272;
+
+//- Distance from teeter pin to rotor apex (m).
+UndSling                    0.0;
+
+//- Distance from nacelle yaw axis to teeter pin or rotor apex (m).
+OverHang                   -0.00001;
+
+//- Distance of nacelle fore to aft extent (m).
+NacelleLength               2;
+
+//- Nacelle frontal area (m^2).
+NacelleFrontalArea          0.5;
+
+//- Nacelle coefficient of drag.
+NacelleCd                   0.5;
+
+//- Height of tower top above ground (m).
+TowerHt                     0.728; //5.218;
+
+//- Vertical distance from tower-top to rotor shaft centerline (m).
+Twr2Shft                    0.272;
+
+//- Shaft tilt-up angle (degrees).
+ShftTilt                   0.0001;
+
+//- Coning angle of blades (degrees) (one for each blade). Angle of much the blades lean upstream.
+PreCone                  (0.0 0.0 0.0);
+
+//- Gear-box ratio.
+GBRatio                    97.0;
+
+//- Gear-box efficiency.
+GBEfficiency                1.0;
+
+//- Generator efficiency.
+GenEfficiency               0.944;
+
+//- Rated rotor speed (rpm).
+RatedRotSpeed              12.1;
+
+
+GenIner                   534.116;
+HubIner                   115.926E3;
+BladeIner                  11.776047E6;
+
+//- Rotor speed controller type.  Options are "none" or "fiveRegion".
+//  "none" provides no torque control and the rotor rotates at a 
+//  constant rate specified by the variable "rotorSpeed".  "fiveRegion"
+//  controls rotor speed through generator torque in regions 1, 1-1/2,
+//  2, 2-1/2, and 3.  Torque control alone will not control speed in
+//  region 3, but if no pitch control is implemented, then rotor speed
+//  will be limited at rated regardless of generator and rotor torque.
+//  Additionally "speedTorqueTable" was in the example
+GenTorqueControllerType  "none";
+BladePitchControllerType   "none";
+NacYawControllerType       "none";
+
+//- Engage a rotor speed limiter (do not let rotor speed exceed rated
+//  or become negative.
+RotSpeedLimiter             false;
+
+//- Engage a generator torque rate limiter.
+GenTorqueRateLimiter        false;
+
+//- Engage a yaw rate limiter.
+NacYawRateLimiter           false;
+
+//- Engage a blade pitch rate limiter.
+BladePitchRateLimiter       false;
+
+//- Parameter for low-pass speed filter for control system (Hz).
+SpeedFilterCornerFrequency  2.0;
+
+
+GenTorqueControllerParams
+{
+    RateLimitGenTorque       15.0E3;
+    SpeedTorqueTable
+    (
+        //      gen speed (RPM) gen torque (N-m)
+        (       670.00              0.0 )
+        (       871.00          20000.0 )
+        (       1161.96         32000.0 )
+        (       1173.70         43093.6 )
+    );
+    CutInGenSpeed           670.0;
+    Region2StartGenSpeed    871.0;
+    Region2EndGenSpeed     1161.963;
+    CutInGenTorque            0.0;
+    RatedGenTorque           43.09355E3;
+    KGen                      2.55764E-2;
+}
+
+BladePitchControllerParams
+{
+    RateLimitBladePitch       8.000;
+    PitchMin                  0.000;
+    PitchMax                 90.000;
+    PitchK                    6.302336;
+    PitchControlKP            1.82620057;
+    PitchControlKI            0.78265750;
+    PitchControlKD            0.000;
+}
+
+NacYawControllerParams
+{
+    RateLimitNacYaw           2.0;
+}
+
+
+Airfoils
+(
+    "profile04" 
+    "profile05" 
+    "profile06" 
+    "profile07" 
+    "profile08" 
+    "profile09" 
+    "profile10" 
+    "profile11" 
+    "profile12" 
+    "profile13" 
+    "profile14" 
+    "profile15" 
+    "profile16" 
+    "profile17" 
+    "profile18" 
+    "profile19" 
+    "cylinder"
+);
+
+
+
+BladeData
+(
+//  radius(m) c(m) twist(deg) thickness(% of c)  userDef airfoil
+    (0.3      0.09   0   1.0    0  16)  
+    (0.449999 0.24   16.4  1.0    0  0)
+    (0.675    0.207  12.1  1.0    0  1)
+    (0.899999 0.178  8.3  1.0    0  2)
+    (1.025    0.166  7.1   1.0    0  3)
+    (1.125    0.158  6.1   1.0    0  4)
+    (1.224999 0.15   5.5   1.0    0  5)
+    (1.349999 0.142  4.8   1.0    0  6)
+    (1.475    0.134  4.0   1.0    0  7)
+    (1.575    0.129  3.7   1.0    0  8)
+    (1.675    0.123  3.2   1.0    0  9)
+    (1.8      0.116  2.6   1.0    0 10)
+    (2.025    0.102  1.5   1.0    0 11)
+    (2.165    0.092  0.7   1.0    0 12)
+    (2.193    0.082  0.47  1.0    0 13)
+    (2.222    0.056  0.23  1.0    0 14)
+    (2.25     0.011  0.0   1.0    0 15)
+);
+
+TowerData
+(
+//    height(m)       c(m)   twist(deg)  thickness(% of c)    userDef airfoil
+   (        0.0     0.6096          0.0             1.0          0      16    )
+   (        0.25    0.6096          0.0             1.0          0      16    )
+   (        0.5     0.4064          0.0             1.0          0      16    )
+   (       1        0.4064          0.0             1.0          0      16    )
+);
+

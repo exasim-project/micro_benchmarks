@@ -1,0 +1,72 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      omega;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+// calculate omega value at inlet
+Uref            #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+kref            #eval{ 1.5*sqr($Uref*$Tu) };
+nutref          #eval{ $viscRatio * $nuref };
+omegaref        #eval{ $kref / $nutref };
+
+dimensions      [ 0 0 -1 0 0 0 0 ];
+internalField   uniform $omegaref;
+
+boundaryField
+{
+    // inlet
+    "ii_.*"
+    {
+        type            fixedValue;
+        value           uniform $omegaref;
+    }
+
+    // outlet
+    "oo_.*"
+    {
+        type            zeroGradient;
+    }
+
+    // mixed inlet-outlet
+    "io_.*"
+    {
+        type            inletOutlet;
+        inletValue      uniform $omegaref;
+        value           $internalField;
+    }
+
+    // no-slip wall
+    "ww_.*"
+    {
+        type            omegaWallFunction;
+        blending        binomial;
+        n               2;
+        value           $internalField;
+    }
+
+    // moving no-slip wall
+    "wm_.*"
+    {
+        type            omegaWallFunction;
+        blending        binomial;
+        n               2;
+        value           $internalField;
+    }
+
+    #include            "include/constraintPatches"
+}
+
+// ************************************************************************* //

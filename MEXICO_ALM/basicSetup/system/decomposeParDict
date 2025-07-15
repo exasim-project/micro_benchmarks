@@ -1,0 +1,43 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      decomposeParDict;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+numberOfSubdomains  32;
+method              kahip; 
+
+kahipCoeffs
+{
+    config          fast; // fast | eco | strong
+    imbalance       0.01;
+}
+simpleCoeffs
+{
+    n               (4 4 4);
+    delta           0.001;
+}
+constraints
+{
+    keepALMdisk
+    {
+        type singleProcessorFaceSets;
+        sets 
+        (
+            (ALMdisk -1)
+        );
+        enabled  false;
+    }
+}
+// ************************************************************************* //

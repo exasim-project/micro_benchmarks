@@ -1,0 +1,62 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+dimensions      [ 0 1 -1 0 0 0 0 ];
+internalField   uniform ($Uxref $Uyref $Uzref);
+
+boundaryField
+{
+    // inlet
+    "ii_.*"
+    {
+        type            fixedValue;
+        value           uniform ($Uxref $Uyref $Uzref);
+    }
+
+    // outlet
+    "oo_.*"
+    {
+        type            zeroGradient;
+    }
+
+    // mixed inlet-outlet
+    "io_.*"
+    {
+        type            inletOutlet;
+        inletValue      uniform ($Uxref $Uyref $Uzref);
+        value           $internalField;
+    }
+
+    // no-slip wall
+    "ww_.*"
+    {
+        type            fixedValue;
+        value           uniform (0 0 0);
+    }
+
+    // moving no-slip wall
+    "wm_.*"
+    {
+        type            movingWallVelocity;
+        value           uniform (0 0 0);
+    }
+
+    #include            "include/constraintPatches"
+}
+
+// ************************************************************************* //

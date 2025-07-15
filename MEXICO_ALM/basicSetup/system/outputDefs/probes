@@ -1,0 +1,210 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+
+probes_azi_minus_056
+{
+    type            probes;
+    libs            ( "libsampling.so" );
+    writeControl    timeStep;
+    writeInterval   1;
+    fields          ( U );
+
+    // Optional: do not recalculate cells if mesh moves
+    fixedLocations  true;
+
+    // Optional: interpolation scheme to use (default is cell)
+    //interpolationScheme cellPatchConstrained;
+
+    probeLocations
+    (      
+        (-0.30 0.56 0.00)
+    );
+}
+
+probes_azi_minus_079
+{
+    type            probes;
+    libs            ( "libsampling.so" );
+    writeControl    timeStep;
+    writeInterval   1;
+    fields          ( U );
+
+    // Optional: do not recalculate cells if mesh moves
+    fixedLocations  true;
+
+    // Optional: interpolation scheme to use (default is cell)
+    //interpolationScheme cellPatchConstrained;
+
+    probeLocations
+    (      
+        (-0.30 0.79 0.00)
+    );
+}
+
+probes_azi_minus_135
+{
+    type            probes;
+    libs            ( "libsampling.so" );
+    writeControl    timeStep;
+    writeInterval   1;
+    fields          ( U );
+
+    // Optional: do not recalculate cells if mesh moves
+    fixedLocations  true;
+
+    // Optional: interpolation scheme to use (default is cell)
+    //interpolationScheme cellPatchConstrained;
+
+    probeLocations
+    (      
+        (-0.30 1.35 0.00)
+    );
+}
+
+probes_azi_minus_185
+{
+    type            probes;
+    libs            ( "libsampling.so" );
+    writeControl    timeStep;
+    writeInterval   1;
+    fields          ( U );
+
+    // Optional: do not recalculate cells if mesh moves
+    fixedLocations  true;
+
+    // Optional: interpolation scheme to use (default is cell)
+    //interpolationScheme cellPatchConstrained;
+
+    probeLocations
+    (      
+        (-0.30 1.85 0.00)
+    );
+}
+
+probes_azi_minus_207
+{
+    type            probes;
+    libs            ( "libsampling.so" );
+    writeControl    timeStep;
+    writeInterval   1;
+    fields          ( U );
+
+    // Optional: do not recalculate cells if mesh moves
+    fixedLocations  true;
+
+    // Optional: interpolation scheme to use (default is cell)
+    //interpolationScheme cellPatchConstrained;
+
+    probeLocations
+    (      
+        (-0.30 2.07 0.00)
+    );
+}
+
+probes_azi_plus_056
+{
+    type            probes;
+    libs            ( "libsampling.so" );
+    writeControl    timeStep;
+    writeInterval   1;
+    fields          ( U );
+
+    // Optional: do not recalculate cells if mesh moves
+    fixedLocations  true;
+
+    // Optional: interpolation scheme to use (default is cell)
+    //interpolationScheme cellPatchConstrained;
+
+    probeLocations
+    (      
+        (0.30 0.56 0.00)
+    );
+}
+
+probes_azi_plus_079
+{
+    type            probes;
+    libs            ( "libsampling.so" );
+    writeControl    timeStep;
+    writeInterval   1;
+    fields          ( U );
+
+    // Optional: do not recalculate cells if mesh moves
+    fixedLocations  true;
+
+    // Optional: interpolation scheme to use (default is cell)
+    //interpolationScheme cellPatchConstrained;
+
+    probeLocations
+    (      
+        (0.30 0.79 0.00)
+    );
+}
+
+probes_azi_plus_135
+{
+    type            probes;
+    libs            ( "libsampling.so" );
+    writeControl    timeStep;
+    writeInterval   1;
+    fields          ( U );
+
+    // Optional: do not recalculate cells if mesh moves
+    fixedLocations  true;
+
+    // Optional: interpolation scheme to use (default is cell)
+    //interpolationScheme cellPatchConstrained;
+
+    probeLocations
+    (      
+        (0.30 1.35 0.00)
+    );
+}
+
+probes_azi_plus_185
+{
+    type            probes;
+    libs            ( "libsampling.so" );
+    writeControl    timeStep;
+    writeInterval   1;
+    fields          ( U );
+
+    // Optional: do not recalculate cells if mesh moves
+    fixedLocations  true;
+
+    // Optional: interpolation scheme to use (default is cell)
+    //interpolationScheme cellPatchConstrained;
+
+    probeLocations
+    (      
+        (0.30 1.85 0.00)
+    );
+}
+
+probes_azi_plus_207
+{
+    type            probes;
+    libs            ( "libsampling.so" );
+    writeControl    timeStep;
+    writeInterval   1;
+    fields          ( U );
+
+    // Optional: do not recalculate cells if mesh moves
+    fixedLocations  true;
+
+    // Optional: interpolation scheme to use (default is cell)
+    //interpolationScheme cellPatchConstrained;
+
+    probeLocations
+    (      
+        (0.30 2.07 0.00)
+    );
+}
+
+// ************************************************************************* //

@@ -1,0 +1,184 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      turbineProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+globalProperties
+{
+    outputControl       "timeStep";
+    outputInterval       1;
+}
+
+turbine0 
+{
+    turbineType         "MEXICO_Rotor";
+
+    //- List of locations of bases of turbines in array relative to origin (m).
+    baseLocation        (0 0 -1); //-5.49);
+
+    //- List of number of actuator points on blades, tower, and nacelles
+    //  of turbines in array.
+    numBladePoints      43;              // Sarmast et al. 2016 used 41, Nathan et al. 2017 used 40                                     
+    numNacellePoints    10;              // 43 follows Handbook of Wind Energy Aerodynamics 2022 
+    numTowerPoints      10;
+
+    //NEWLINES
+    //- List of number of actuator points in the radial direction from root to
+    //  tip or actuator disk. 
+    //nRadial             43;
+    
+    //- List of maximum length in azimuth direction of an actuator element
+    //azimuthMaxDis        0.04;  // perimeter at R=2.25m = 14m -> 1° = 360 Elements -> 0.04m
+
+    //- List of number of averaging sectors to report values at over disk. 
+    //nAvgSector           1;
+
+
+    //- List of description of actuator line point distribution types
+    //  for each turbine (set to uniform for now--here for future upgrades).
+    bladePointDistType               "uniform";
+    pointDistType                    "uniform";
+    nacellePointDistType             "uniform";
+    towerPointDistType               "uniform";
+
+    //- List of the method to define blade related search cells.
+    bladeSearchCellMethod            "disk";
+
+    //- List of description of how velocity field is interpolated from the 
+    //  CFD mesh to the actuator line points.  Options are "cellCenter", "linear",
+    //  or "integral".  "cellCenter" uses the value at the cell center of the cell
+    //  within which the actuator point lies.  "linear" uses linear
+    //  interpolation from the cell within which the actuator point lies and
+    //  from neighboring cells. "integral" computes the actuator point velocity as
+    //  the integral of the local velocity and the force distribution function following
+    //  Spalart's formulation.
+    bladeActuatorPointInterpType     "integral";
+    pointInterpType                  "integral";      //potentially used by ADM
+    nacelleActuatorPointInterpType   "linear";
+    towerActuatorPointInterpType     "linear";
+
+    //- List of how the blades are updated in time.  "oldPosition" means that for
+    //  computing the body force due to the blades for t^(n+1), the velocity is
+    //  sampled from the location of the blades at time t^n.  The blades are advanced
+    //  to their t^(n+1) position.  Then the blade force is computed at the updated  
+    //  blade location and projected from there onto the flow field.  "newPosition"
+    //  means that the blades are first advanced to thier t^(n+1) location, and then
+    //  velocity is sampled there, blade forces are computed there, and body forces
+    //  are projected.
+    actuatorUpdateType               "oldPosition";
+    bladeUpdateType                  "oldPosition";
+
+    //- The body force projection type to be used. Currently, the options are:
+    //  "uniformGaussian" - Projects force at a point uniformly in all three directions.
+    //                      Enter the spreading value epsilon as the first entry into
+    //                      the epsilon vector, the remaining two entries will be disregarded.
+    //  "diskGaussian"    - Projects force at a point constantly over a disk of some radius,
+    //                      but dies off with a Gaussian at the end of the disk.  It also dies
+    //                      off as a Gaussian in the direction normal to the disk.  Useful for
+    //                      the tower and nacelle.  For the tower, the disk normal is along
+    //                      the tower direction and the disk takes the radius of the tower.
+    //                      For the nacelle, the disk normal is along the drive shaft direction
+    //                      and the radius is the effective radius (based on frontal area) of
+    //                      the nacelle. Epsilon for the radial die off of force is the first
+    //                      entry into the epsilon vector and that of the axial die off is
+    //                      the second entry (see below).
+    //  "advanced"        - Was used for tower in the example. No info what it does.
+    bladeForceProjectionType         "uniformGaussian";
+    nacelleForceProjectionType       "diskGaussian";
+    towerForceProjectionType         "advanced";
+
+    //- There are two options for how the direction of lift and drag of the blades is set.
+    //  In the "sampleVelocityAligned" option, the lift component of the body force is everywhere
+    //  perpendicular to the sampled velocity vector and the blade span direction and the drag 
+    //  is parallel to the sampled velocity vector.  In the "localVelocityAligned" option, the 
+    //  lift component of the body force is everywhere perpendicular to the local velocity and the
+    //  spanwise direction, and the drage is pareallel to the local velocity vector.  The second
+    //  option follows Spalart's formulation.
+    bladeForceProjectionDirection    "localVelocityAligned";
+
+    //- List of body force normalization parameter for each turbine (m). This controls
+    //  the width of the Gaussian projection.  It should be tied to grid width.
+    //  A value below 1 times the local grid cell length will yield inaccurate
+    //  projection of the forces to the grid (i.e., if you integrate the projected
+    //  force, it will be significantly smaller than the force that was projected
+    //  in the first place.
+    bladeEpsilon                     (0.0625 0.00 0.00);            // 0.03125 m is min local grid with at tip refinement
+    epsilon                           0.0625;                       // epsilon has to be larger than 2*local grid size, equal often used
+    nacelleEpsilon                   (0.12 0.12 0.00);            // also coupling with local chord lentgh useful
+    towerEpsilon                     (0.12 0.12 0.00);
+
+    //- The velocity used to calculate tower and nacelle forces must be sampled
+    //  somewhere upstream of the actuator points.  These variables describe how
+    //  far upstream the sampling occurs.
+    nacelleSampleDistance             1.0;
+    towerSampleDistance               1.0;
+
+    //NEWLINES
+    //- List of scalars for scaling down/up the computed forces and/or the sampled
+    //  inflow velocity.
+    //forceScalar          1.0;
+    //inflowVelocityScalar 1.0;
+
+    //- List of tip/root loss correction type for each turbine.  "none" applies
+    //  no correction.  "Glauert" applies the Glauert tip loss correction.
+    tipRootLossCorrType              "none";
+
+    //- Rotor rotation direction as viewed from upwind.  Options are
+    //  "cw" for clockwise and "ccw" for counter-clockwise.
+    rotationDir                      "cw";
+
+    //- Initial or fixed rotor speed (rpm).  A positive value means
+    //  clockwise rotation for a clockwise rotating turbine (see rotationDir
+    //  above) or counter-clockwise rotation for a counter-clockwise
+    //  rotating turbine.
+    RotSpeed            425.1;
+
+    //- Initial blade 1 rotorAzimuth angle (degrees) (looking from upwind to 
+    //  downwind, a positive rotorAzimuth angle makes a clockwise movement if
+    //  this is a clockwise rotating turbine (see rotationDir above) or
+    //  or a counterclockwise movement if this is a counter-clockwise
+    //  rotating turbine).
+    Azimuth              357.220324800042;
+
+    //- Initial generator torque on turbine (not density normalized).
+    TorqueGen            0.0;
+
+    //- Initial blade pitch (degrees) of all blades.
+    Pitch                0.0;       // pitch of -2.3 is included in airfoil suite geometry .dat files
+
+    //- Initial or fixed nacelle yaw angle.  Direction that the turbine
+    //  is pointed in cardinal directions (i.e. 0 = north, 90 = east, 
+    //  180 = south, 270 = west) (degrees).  This is converted to radians
+    //  in the more standard mathematical convention of 0 degrees on the 
+    //  + x axis and positive degrees in the counter-clockwise direction.
+    NacYaw              270.0;
+
+    //- Specify the fluid density (kg/m^3).  This turbine model is to be  
+    //  used with an incompressible solver, so density divides out of the 
+    //  momentum equations.  Therefore, turbine forces are given to the 
+    //  solver asforce/density.  To get actual forces, torques, and power 
+    //  written to file, provide a density by which to multiply.
+    fluidDensity        1.191;
+
+    includeNacelle     false;
+    includeTower       false;
+
+    // CHANGED POSITION IN CODE
+    //- List of correction type for the effect of drag on sampled velocity.  "none"
+    //  applies no corretion.  "Martinez" applies the correction of Tony Martinez
+    //  and Charles Meneveau.  
+    // seems to create better results with "Martinez", further testing
+    velocityDragCorrType             "none";           
+}
+

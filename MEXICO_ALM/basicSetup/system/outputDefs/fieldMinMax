@@ -1,0 +1,33 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+minMax_U
+{
+    type            fieldMinMax;
+    libs            ( "libfieldFunctionObjects.so" );
+    fields          ( U );
+    log             false;
+}
+
+minMax_p
+{
+    type            fieldMinMax;
+    libs            ( "libfieldFunctionObjects.so" );
+    fields          ( p );
+    log             false;
+}
+
+minMax_nut
+{
+    type            fieldMinMax;
+    libs            ( "libfieldFunctionObjects.so" );
+    fields          ( nut );
+    log             false;
+}
+
+// ************************************************************************* //

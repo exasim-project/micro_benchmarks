@@ -1,0 +1,108 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.6                                   |
+|   \\  /    A nd           | Web:      http://www.OpenFOAM.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      turbineProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+globalProperties
+{
+    outputControl       "timeStep";
+    outputInterval       1;
+}
+
+propeller0 
+{
+    rotorClass                      "turbine";              // propeller or turbine
+    rotorType                       "MEXICO_Rotor";        // name of rotor file in rotorProperties
+
+    relativeRotorPosition           false;                   // switch to set the positioning mode. If true rotor is positioned relative to tower and nacelle.
+                                                            // If false position is defined via rotor center (baseLocation) and rotorAxis.
+    rotorAxis                       (-1 0 0);               // rotation axis of the rotor. Should point in front of the rotor. (Only required if relativeRotorPosition is false)
+    //yawAxis                         (0 0 1);                // yaw axis of the rotor / tower/arm axis. (Implementation not finished)
+
+    baseLocation                    (0 0 0);     // List of locations of bases of turbines in array relative to origin (m).
+                                                                            // Equals the center of rotation if relativeRotorPosition is false
+    
+    rotationDir                     "cw";                  // Rotor rotation direction as viewed from upwind ("cw" or "ccw").    
+    RotSpeed                        425.1;                   // Initial or fixed rotor speed (rpm).
+    NacYaw                          270.0;                  // Initial or fixed nacelle yaw angle.
+                                                             // (i.e. 0 = north (+y), 90 = east (+x), 180 = south (-y), 270 = west (-x)) (degrees).
+    Pitch                           0.0;                 // Initial blade pitch (degrees) of all blades.
+
+    rhoRef                          1.191;                //- Specify the reference fluid density (kg/m^3).
+    rho                             "rhoInf";             //- Specify if the case is compressible ("rho") or incompressible ("rhoInf")
+
+    numBladePoints                  43;        // Number of actuator points on blades.
+
+    bladeEpsilon                    (0.65 0.85 2.0);          // List of body force normalisation parameter for each turbine (m).
+                                                            // If AALM, i.e chordThicknessGaussian projection type, (a_c a_t a_r) -> eps_c = a_c*c etc.
+                                                            // BP for AALM need to be determined and refined. Starting with values from Martinez et al., Churchfield et al.
+                                                            // If not integral as interpolation type epsilon > 2 Delta in every direction.
+                                                            // If integral, eps_t > 1 Delta.
+                                                            // BP from 2D study of Martinez: eps_c = 0.4c and eps_t = 0.2c
+                                                            // BP from Churchfield: eps_c = 0.85c and eps_t = 0.85t
+                                                            // Try mix of both -> eps_c = 0.65c, eps_t = 0.2c, eps_r = 2dr
+
+    // --- optional entries
+    azimuth0Axis                    (0 0 1);                // axis of the azimuth 0° of blade 1
+    Azimuth                         357.220324800042;       // Initial blade 1 rotorAzimuth angle (deg)
+
+    // blade related entries
+    //bladePointDistType              "uniform";              // not in LF setup, not needed?
+    bladeSearchCellMethod           "disk";                     // List of the method to define blade related search cells.
+    bladeActuatorPointInterpType    "integral";                 // Method how velocity field is interpolated from the mesh to the actuator line points.
+                                                                // "cellCenter", "linear", or "integral"
+    actuatorUpdateType              "newPosition";              // Option when to update blade positions. "oldPosition" or "newPosition"
+    bladeForceProjectionType        "chordThicknessGaussian";   //- The body force projection type to be used.
+    bladeForceProjectionDirection   "localVelocityAligned";     // Method to define lift and drag vector directions. "localVelocityAligned" or "sampleVelocityAligned"
+
+    includeNacelle                  false;
+    includeTower                    false;
+
+        // --- nacelle related entries ---------------------------------------------------------------------------
+    // --- required entries if includeNacelle is true
+    numNacellePoints                10;                     // Number of actuator points 
+    nacelleSampleDistance           10.0;                    // Position where velocity is sampled for force calculation
+    nacelleEpsilon                  (2 2 0.00);
+
+    // --- optional entries
+    nacellePointDistType            "uniform";
+    nacelleActuatorPointInterpType  "linear";
+    nacelleForceProjectionType      "diskGaussian";
+
+    // --- tower related entries -----------------------------------------------------------------------------
+    // --- required entries if includeTower is true
+    numTowerPoints                  30;
+    towerSampleDistance             10.0;
+    towerEpsilon                    (2 2 0.00);
+
+    // --- optional entries
+    towerPointDistType              "uniform";
+    towerActuatorPointInterpType    "linear";
+    towerForceProjectionType        "advanced";
+
+    // --- Old Entries not in LF setup -----------------------------------------------------------------------------
+
+    //- List of tip/root loss correction type for each turbine.  "none" applies
+    //  no correction.  "Glauert" applies the Glauert tip loss correction.
+    //tipRootLossCorrType              "Glauert";
+
+    //- List of correction type for the effect of drag on sampled velocity.  "none"
+    //  applies no corretion.  "Martinez" applies the correction of Tony Martinez
+    //  and Charles Meneveau.
+    //velocityDragCorrType             "none";
+
+    //- Initial generator torque on turbine (not density normalized).
+    //TorqueGen            0.0;
+}
+
