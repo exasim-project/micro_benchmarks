@@ -1,0 +1,7 @@
+module purge
+module load gnu/11
+module load openmpi/3
+module load cmake
+module load OpenFOAM/v2412
+module load env/py_3.11
+conda activate OBR-DEV
