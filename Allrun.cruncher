@@ -1,0 +1,121 @@
+#!/bin/bash 
+### Script setting up a new performance campaign with the EXASIM benchmarks
+### Upstream CFD, 2025
+
+CAMPAIGN_NAME="cruncher_test"
+ENVIRONMENT_FILE="./scripts/cruncher/loadModules"
+
+source $ENVIRONMENT_FILE
+export OBR_RUN_CMD="mpirun --bind-to core -np {np} {solver} {solverargs} -parallel -case {path}/case > {path}/case/{solver}_{timestamp}.log 2>&1"
+
+#CASES=(periodicChannelFlow atmFlatTerrain WindsorBody ImpingingJet MEXICO_ALM)
+CASES=(atmFlatTerrain)
+YAMLS=(cruncher_study.yaml)
+#YAMLS=(performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml)
+NJOBSPERSTUDY=(10)  
+#NJOBSPERSTUDY=(16 32 22 22 24)  
+
+# --- Parameters ---
+MAX_JOBS=100
+CHECK_INTERVAL=300
+ALL_SUBMITTED=0
+
+# Initialize list of case directories
+CASE_DIRS=()
+for i in "${!CASES[@]}"; do
+    CASE_DIRS+=("${CASES[$i]}_${CAMPAIGN_NAME}")
+done
+
+# Function to check job slots
+wait_for_slots() {
+    local expected_jobs=$1
+    while true; do
+        current_jobs=$(squeue -u "$USER" | tail -n +2 | wc -l)
+        jobs_left=$((MAX_JOBS - current_jobs))
+        if (( jobs_left >= expected_jobs )); then
+            return
+        fi
+        echo "[WAIT] Only $jobs_left job slots available; need $expected_jobs. Retrying in $CHECK_INTERVAL seconds..."
+        sleep "$CHECK_INTERVAL"
+    done
+}
+
+for i in "${!CASES[@]}"; do
+    case="${CASES[$i]}"
+    yaml="${YAMLS[$i]}"
+
+    echo "[INFO] Initialising case: $case"
+    
+    mkdir -p "${case}_${CAMPAIGN_NAME}"
+    cp -r "$case/assets" "${case}_${CAMPAIGN_NAME}/"
+    cp -r "$case/templates" "${case}_${CAMPAIGN_NAME}/"
+    ln -s "../$case/basicSetup" "${case}_${CAMPAIGN_NAME}/basicSetup"
+    pushd "${case}_${CAMPAIGN_NAME}" > /dev/null
+    if [ ! -f .init_complete ]; then
+        obr init -c "assets/$yaml" || { echo "[ERROR] init failed"; exit 1; }
+	touch .init_complete
+    fi
+    popd > /dev/null
+done
+
+for i in "${!CASES[@]}"; do
+    case="${CASES[$i]}"
+    njobs="${NJOBSPERSTUDY[$i]}"
+    case_dir="${case}_${CAMPAIGN_NAME}"
+
+    echo "$njobs" > "$case_dir/.expected_jobs"
+
+    pushd "$case_dir" > /dev/null
+    sbatch ../submit_allstudies.sh
+    popd > /dev/null
+done
+
+# Main loop: keep looping until all cases are submitted
+while [[ $ALL_SUBMITTED -eq 0 ]]; do
+    ALL_SUBMITTED=1  # assume all done unless we find one not done
+
+    for i in "${!CASES[@]}"; do
+	case_dir="${CASE_DIRS[$i]}"
+	njobs="${NJOBSPERSTUDY[$i]}"
+        # Already submitted?
+        if [[ -f "${case_dir}/.submitted" ]]; then
+            continue
+        fi
+
+        # Generation complete?
+        if [[ -f "${case_dir}/.generation_complete" ]]; then
+            echo "[INFO] Submitting studies for $case_dir"
+
+            wait_for_slots "$njobs" # Wait for job slots
+
+            pushd "$case_dir" > /dev/null
+
+            # Run CUDA submission
+            #obr submit --filter executor==cuda --partition long --time "04:00:00" \
+            #    --template ../scheduler_templates/horeka.sh -o execute \
+            #    --scheduler_args "account bmbf_2022_EXASIM gpus_per_node 4" --max_queue_size 100
+
+            #sleep 10  # Optional: give scheduler a breather
+
+            # Run CPU submission
+            obr submit --filter executor==CPU --partition long --time "04:00:00" \
+                --template ../scheduler_templates/horeka.sh -o runParallelSolver \
+                --scheduler_args "account bmbf_2022_EXASIM tasks_per_node 32" --max_queue_size 100
+
+            touch .submitted
+            echo "[INFO] Submission complete for $case_dir"
+
+            popd > /dev/null
+        else
+            echo "[WAIT] $case_dir not ready yet (waiting for .generation_complete)"
+            ALL_SUBMITTED=0
+        fi
+    done
+
+    if [[ $ALL_SUBMITTED -eq 0 ]]; then
+        echo "[LOOP] Not all cases submitted yet. Waiting $CHECK_INTERVAL seconds before retry..."
+        sleep "$CHECK_INTERVAL"
+    fi
+done
+
+echo "[DONE] All studies submitted."

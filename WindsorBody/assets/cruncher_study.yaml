@@ -1,0 +1,99 @@
+case:
+  type: CaseOnDisk
+  origin: ${{yaml.location}}/../basicSetup
+  post_build:
+      - shell: ${{yaml.location}}/scripts/getMesh.sh
+      - shell: ${{yaml.location}}/scripts/getFlowFieldDDES.sh
+      - shell: ${{yaml.location}}/scripts/concatenateDomain.sh -fn6
+      - turbulenceProperties:
+           simulationType: LES
+      - controlDict:
+           writeFormat: binary
+           libs: ["libOGL.so"]
+           endTime: 0.005
+variation:
+      - operation: decomposePar
+        schema: "deco_{numberOfSubdomains}"
+        common:
+            method: multiLevel
+            tasksPerNode: 32
+            methods: ["kahip", "kahip", "kahip"]
+            distribution: ["auto", 2, 16]
+            levels: ["node", "gpu", "cpu"]
+        generator:
+            key: coeff
+            values: [1, 2]
+            template:
+              - numberOfSubdomains: ${{ coeff * 32 }}
+        variation:
+          - operation: fvSolution
+            schema: "{solver}{preconditioner}"
+            values:
+              - set: solvers/p
+                solver: GAMG
+                executor: CPU
+                preconditioner: none
+                smoother: GaussSeidel
+              - set: solvers/p
+                solver: PCG
+                executor: CPU
+                preconditioner: FDIC
+                smoother: none
+postProcess:
+  queries: ["executor", "preconditioner", "ranksPerGPU", "nCells", "numberOfSubdomains", "fuse", "ClockTime", "timeStepContErrors_sumLocal"]
+  matcher:
+    - regexp: '\[OGL LOG\]\[Proc: 0\]{field}: {name}: (?P<{name}>[0-9.]*) \[ms\]'
+      name: ogl_matcher
+      args: ["field", "name"]
+    - regexp: '\[INFO\] {name}: (?P<{name}>[0-9.]*) \[ms\]'
+      name: info_matcher
+      args: ["name"]
+  log:
+    - matcher: info_matcher
+      args: ["MomentumPredictor"]
+      type: average
+    - matcher: info_matcher
+      args: ["MatrixAssemblyPI"]
+      type: average
+    - matcher: info_matcher
+      args: ["MatrixAssemblyPII"]
+      type: average
+    - matcher: info_matcher
+      args: ["MatrixAssemblyU"]
+      type: average
+    - matcher: info_matcher
+      args: ["TimeStep"]
+      type: average
+    - matcher: info_matcher
+      args: ["PIMPLEStep"]
+      type: average
+    - matcher: info_matcher
+      args: ["SolveP"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "solve"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "solve_multi_gpu"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "copy_x_back"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "init_precond"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "perform_all_to_all_update"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "perform_pairwise_update"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p", "reorder_matrix_data"]
+      type: average
+    - matcher: ogl_matcher
+      args: ["p_distributed_matrix", "call_update"]
+      type: average
+    - matcher: transpEqn
+      args: ["p"]
+      type: average
