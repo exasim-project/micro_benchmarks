@@ -1,0 +1,12 @@
+#!/bin/bash 
+
+./plot_scalability_v4.py --json ../ImpingingJet_20250606/postpro.json --nPISOCorr 3 --ndt 70
+./plot_scalability_v4.py --json ../Perdigao_20250606/postpro.json 
+./plot_scalability_v4.py --json ../WindsorBody_20250619/postpro.json  
+./plot_scalability_v4.py --json ../WindsorBody_20250620/postpro.json 
+./plot_scalability_v4.py --json ../WindsorBody_20250721/postpro.json
+./plot_scalability_v4.py --json ../WindsorBody_20250724/postpro.json
+./plot_scalability_v4.py --json ../WindsorBody_20250724/postpro.json --spuma-json ../WindsorBody_SPUMA_cineca_v2/clocktimes.json 
+./plot_scalability_v4.py --json ../atmFlatTerrain_20250606/postpro.json
+./plot_scalability_v4.py --json ../MEXICO_ALM_20250606/postpro.json 
+./plot_scalability_v4.py --json ../LidDrivenCavity3D_20250723/postpro.json --nPISOCorr 2 --ndt 20
