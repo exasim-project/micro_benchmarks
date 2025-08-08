@@ -1,0 +1,54 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      k;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+// calculate k value at inlet
+Uref            #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+kref            #eval{ 1.5*sqr($Uref*$Tu) };
+
+dimensions      [ 0 2 -2 0 0 0 0 ];
+internalField   uniform $kref;
+
+boundaryField
+{
+    $inletPatch		//Inlet
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+
+    $outletPatch		//Outlet
+    {
+        type            zeroGradient;
+    }
+
+    $forcesWallPatches
+    {
+        type            kqRWallFunction;
+        value           $internalField;
+    }
+    $remainingWallPatches
+    {
+        type            kqRWallFunction;
+        value           $internalField;
+    }
+
+    #include            "include/constraintPatches"
+}
+
+// ************************************************************************* //

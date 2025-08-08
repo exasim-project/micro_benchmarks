@@ -1,0 +1,45 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+DESFields
+{
+    type            turbulenceFields;
+    libs            ( "libfieldFunctionObjects.so" );
+    fields          ( fd LESRegion );
+    log             false;
+    enabled         true;
+    writeControl    writeTime;
+}
+
+blendingFactor
+{
+    type            blendingFactor;
+    libs            ( "libfieldFunctionObjects.so" );
+    field           U;
+    log             false;
+    executeControl   timeStep;
+    executeInterval  1;
+    result          DEShybridFactor;
+    enabled         true;
+    writeControl    writeTime;
+}
+
+DEShybridFactor
+{
+    type             exprField;
+    libs             (fieldFunctionObjects);
+    store            true;
+
+    executeControl   timeStep;
+    executeInterval  1;
+    writeControl     writeTime;
+
+    field            DEShybridDevFactorPost;
+    expression       "1-DEShybridFactor";
+}
+// ************************************************************************* //

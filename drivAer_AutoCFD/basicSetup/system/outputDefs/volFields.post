@@ -1,0 +1,88 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+Uref            #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+
+vorticity
+{
+    type            vorticity;
+    libs            ( "libfieldFunctionObjects.so" );
+    log             false;
+    enabled         true;
+    writeControl    writeTime;
+}
+
+Q
+{
+    type            Q;
+    libs            ( "libfieldFunctionObjects.so" );
+    log             false;
+    enabled         true;
+    writeControl    writeTime;
+}
+
+magUMeanNormTrim
+{
+    type             exprField;
+    libs             (fieldFunctionObjects);
+    store   false;
+
+    executionControl none;
+    writeControl     writeTime;
+
+    field            magUMeanNormTrim;
+    expression       "mag(UMeanTrim)/38.889";
+}
+
+CpMeanTrim
+{
+    libs             ( "libfieldFunctionObjects.so" );
+    type             pressure;
+    writeControl     writeTime;
+
+    mode             staticCoeff;
+    rhoInf           1.204;
+    rho              rhoInf;
+    pRef             0;
+    pInf             0;
+    field            pMeanTrim;
+    U                UMeanTrim;
+    UInf             ( $Uxref $Uyref $Uzref );
+    result           CpMeanTrim;
+}
+
+CptMeanTrim
+{
+    libs             ( "libfieldFunctionObjects.so" );
+    type             pressure;
+    writeControl     writeTime;
+
+    mode             totalCoeff;
+    rhoInf           1.204;
+    rho              rhoInf;
+    pRef             0;
+    pInf             0;
+    field            pMeanTrim;
+    U                UMeanTrim;
+    UInf             ( $Uxref $Uyref $Uzref );
+    result           CptMeanTrim;
+}
+
+CDLTrim
+{
+    type             exprField;
+    libs             (fieldFunctionObjects);
+    store   false;
+
+    executionControl none;
+    writeControl     writeTime;
+
+    field            microDragMeanTrim;
+    expression       "1.0 - CptMeanTrim - sqr(1.0 - UMeanTrim.x()/38.889) + ((sqr(UMeanTrim.y()) + sqr(UMeanTrim.z()))/sqr(38.889))";
+}
+// ************************************************************************* //

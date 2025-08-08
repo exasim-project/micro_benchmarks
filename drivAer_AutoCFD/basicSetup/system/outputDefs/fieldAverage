@@ -1,0 +1,56 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+fieldAverage
+{
+    type            fieldAverage;
+    libs            ( "libfieldFunctionObjects.so" );
+    timeStart       $tAvg;
+    enabled         true;
+    writeControl    timeStep;
+    writeInterval   $fieldAvgOutInterval;
+
+    fields
+    (
+        U
+        {
+            mean            on;
+            prime2Mean      on;
+            base            time;
+        }
+
+        p
+        {
+            mean            on;
+            prime2Mean      on;
+            base            time;
+        }
+
+        turbulenceProperties:R
+        {
+            mean            on;
+            prime2Mean      off;
+            base            time;
+        }
+
+        nut
+        {
+            mean            on;
+            prime2Mean      off;
+            base            time;
+        }
+
+        wallShearStress
+        {
+            mean            on;
+            prime2Mean      off;
+            base            time;
+        }
+    );
+}
+// ************************************************************************* //

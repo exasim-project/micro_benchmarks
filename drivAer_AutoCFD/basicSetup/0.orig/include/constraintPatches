@@ -1,0 +1,17 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+#include        "${FOAM_CASE}/system/include/caseDefinition"
+
+// symmetry
+$symmPatches
+{
+    type            symmetry;
+}
+
+// ************************************************************************* //

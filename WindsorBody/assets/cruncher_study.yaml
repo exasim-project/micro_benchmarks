@@ -48,6 +48,12 @@ postProcess:
     - regexp: '\[INFO\] {name}: (?P<{name}>[0-9.]*) \[ms\]'
       name: info_matcher
       args: ["name"]
+    - regexp: 'ExecutionTime = (?P<{name}>[0-9.]+) s'
+      name: exec_time_matcher
+      args: ["name"]
+    - regexp: '^.*?ClockTime\s*=\s*(?P<{name}>\d+(?:\.\d+)?)\s*s\b'
+      name: clock_time_matcher
+      args: ["name"]
   log:
     - matcher: info_matcher
       args: ["MomentumPredictor"]
@@ -64,6 +70,12 @@ postProcess:
     - matcher: info_matcher
       args: ["TimeStep"]
       type: average
+    - matcher: exec_time_matcher
+      args: ["execTimeDelta"]
+      type: diff_mean
+    - matcher: clock_time_matcher
+      args: ["clockTimeDelta"]
+      type: diff_mean
     - matcher: info_matcher
       args: ["PIMPLEStep"]
       type: average

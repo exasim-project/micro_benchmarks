@@ -1,0 +1,32 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+#include        "../include/caseDefinition"
+
+Uref            #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+
+CourantNo
+{
+    type            CourantNo;
+    libs            ( "libfieldFunctionObjects.so" );
+    log             false;
+    enabled         true;
+    writeControl    writeTime;
+}
+
+R
+{
+    type            turbulenceFields;
+    libs            ( "libfieldFunctionObjects.so" );
+    field           R;
+    log             false;
+    enabled         true;
+    writeControl    writeTime;
+}
+
+// ************************************************************************* //

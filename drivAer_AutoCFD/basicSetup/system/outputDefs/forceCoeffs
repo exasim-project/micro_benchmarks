@@ -1,0 +1,209 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+
+forceCoeffs
+{
+    type                forceCoeffs;
+    libs                ("libforces.so");
+    writeControl        timeStep;
+    writeInterval       1;
+    writeFields         false;
+    log                 false;
+
+    patches
+    (
+        $forcesWallPatches
+    );
+
+    magUInf             #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+    lRef                $lref;
+    Aref                $Aref;
+    rhoInf              1.0;
+    rho                 rhoInf;
+
+    CofR                $forcesCoR;
+    dragDir             $forcesDragDir;
+    liftDir             $forcesLiftDir;
+    pitchAxis           #eval {$[(vector) dragDir]^-$[(vector) liftDir]}; // cross product of lift and drag directions
+
+}
+
+binField
+{
+    type                    binField;
+    libs                    (fieldFunctionObjects);
+    writeControl            timeStep;
+    writeInterval           1;
+    binModel                singleDirectionUniformBin;
+    fields                  (forceCoeff momentCoeff);
+    patches
+    (
+        $forcesWallPatches
+    );
+    decomposePatchValues    no;
+    CofR                    $forcesCoR;
+
+    binData
+    {
+        nBin        300;
+        direction   $forcesDragDir;
+        cumulative  yes;
+    }
+}
+
+forceCoeffsConstRef
+{
+    type                forceCoeffs;
+    libs                ("libforces.so");
+    writeControl        timeStep;
+    writeInterval       1;
+    writeFields         false;
+    log                 false;
+
+    patches
+    (
+        $forcesWallPatches
+    );
+
+    magUInf             #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+    lRef                $lrefRef;
+    Aref                $ArefRef;
+    rhoInf              1.0;
+    rho                 rhoInf;
+
+    CofR                $forcesCoRRef;
+    dragDir             $forcesDragDir;
+    liftDir             $forcesLiftDir;
+    pitchAxis           #eval {$[(vector) dragDir]^-$[(vector) liftDir]}; // cross product of lift and drag directions
+
+}
+
+binFieldConstRef
+{
+    type                    binField;
+    libs                    (fieldFunctionObjects);
+    writeControl            timeStep;
+    writeInterval           1;
+    binModel                singleDirectionUniformBin;
+    fields                  (forceCoeff momentCoeff);
+    patches
+    (
+        $forcesWallPatches
+    );
+    decomposePatchValues    yes;
+    CofR                    $forcesCoRRef;
+
+    binData
+    {
+        nBin        300;
+        direction   $forcesDragDir;
+        cumulative  yes;
+    }
+}
+
+    forceCoeffs_susp_front
+    {
+        type                forceCoeffs;
+        libs                ("libforces.so");
+        writeControl        timeStep;
+        writeInterval       1;
+        log                 false;
+
+        patches
+        (
+            "(Wheel_Support_front_1|Wheel_Support_front_2|Brake_Disc_front)"
+        );
+
+        magUInf             #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+        lRef                $lref;
+        Aref                $Aref;
+        rhoInf              1.0;
+        rho                 rhoInf;
+
+        CofR                $forcesCoR;
+        dragDir             $forcesDragDir;
+        liftDir             $forcesLiftDir;
+        pitchAxis           #eval {$[(vector) dragDir]^-$[(vector) liftDir]}; // cross product of lift and drag directions
+    }
+
+    forceCoeffs_susp_rear
+    {
+        type                forceCoeffs;
+        libs                ("libforces.so");
+        writeControl        timeStep;
+        writeInterval       1;
+        log                 false;
+
+        patches
+        (
+            "(Wheel_Support_rear|Brake_Disc_rear)"
+        );
+
+        magUInf             #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+        lRef                $lref;
+        Aref                $Aref;
+        rhoInf              1.0;
+        rho                 rhoInf;
+
+        CofR                $forcesCoR;
+        dragDir             $forcesDragDir;
+        liftDir             $forcesLiftDir;
+        pitchAxis           #eval {$[(vector) dragDir]^-$[(vector) liftDir]}; // cross product of lift and drag directions
+    }
+
+    forceCoeffs_wheels_front
+    {
+        type                forceCoeffs;
+        libs                ("libforces.so");
+        writeControl        timeStep;
+        writeInterval       1;
+        log                 false;
+
+        patches
+        (
+            "(Rims_front|Tires_front|Tire_Plinth_front)"
+        );
+
+        magUInf             #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+        lRef                $lref;
+        Aref                $Aref;
+        rhoInf              1.0;
+        rho                 rhoInf;
+
+        CofR                $forcesCoR;
+        dragDir             $forcesDragDir;
+        liftDir             $forcesLiftDir;
+        pitchAxis           #eval {$[(vector) dragDir]^-$[(vector) liftDir]}; // cross product of lift and drag directions
+    }
+
+    forceCoeffs_wheels_rear
+    {
+        type                forceCoeffs;
+        libs                ("libforces.so");
+        writeControl        timeStep;
+        writeInterval       1;
+        log                 false;
+
+        patches
+        (
+            "(Tires_rear|Tire_Plinth_rear|Rims_rear)"
+        );
+
+        magUInf             #eval{ sqrt(sqr($Uxref) + sqr($Uyref) + sqr($Uzref)) };
+        lRef                $lref;
+        Aref                $Aref;
+        rhoInf              1.0;
+        rho                 rhoInf;
+
+        CofR                $forcesCoR;
+        dragDir             $forcesDragDir;
+        liftDir             $forcesLiftDir;
+        pitchAxis           #eval {$[(vector) dragDir]^-$[(vector) liftDir]}; // cross product of lift and drag directions
+    }
+// ************************************************************************* //

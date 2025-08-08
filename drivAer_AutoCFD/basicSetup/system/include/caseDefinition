@@ -1,0 +1,38 @@
+// Geometrical parameters:
+lref                2.78618;          // reference length (in m) - wheelbase
+Aref                2.17;             // reference area (in m^2) - frontal area
+forcesCoR           (1.40009 0 -0.3176); // Center of reference for forces calculations
+lrefRef             2.78618;          // case independent reference length from the drivAer2a case (in m) - wheelbase
+ArefRef             2.17;             // case independent reference area from the drivAer2a case (in m^2) - frontal area
+forcesCoRRef        (1.40009 0 -0.3176); // case independent center of reference from the drivAer2a case for forces calculations
+forcesDragDir           (1 0 0);
+forcesLiftDir           (0 0 1);
+forcesWallPatches       "(Body.*|Brake.*|Closed.*|CTRL.*|Engine.*|Exhaust.*|Mirror.*|Notchback.*|OCDA.*|Powertrain|Rims.*|Tire.*|Wheel.*)";
+remainingWallPatches    "(domain_road_viscous|domain_road_near_viscous|domain_road_viscous_outer)";
+inletPatch              domain_inlet;
+outletPatch             domain_outlet;
+symmPatches             "(domain_road_.*free_slip|domain_side1|domain_side2|domain_side_top)";
+
+// Flow parameters:
+Uxref               38.889;                     // reference velocity x-component at inlet (in m/s)
+Uyref               0.0;                        // reference velocity y-component at inlet (in m/s)
+Uzref               0.0;                        // reference velocity z-component at inlet (in m/s)
+nuref               1.507e-05;                  // reference molecular kinematic viscosity (in m^2/s) - air at 20°C
+pref                0.0;                        // reference kinematic pressure at outlet (in m^2/s^2)
+rhoref              1.204;                      // reference ambient density
+
+// Turbulence model:
+LESturbModel        SpalartAllmarasDDES;  // Model for LES if used
+RASturbModel        SpalartAllmaras;      // Model for RANS simulations if used
+deltaTurb           maxDeltaxyz;    // Selected delta formulation
+viscRatio           5.0;                        // Turbulent viscosity ratio at inlet (-)
+Tu                  0.0026;                     // Turbulence intensity at inlet
+
+// Simulation parameters:
+dt                  2e-4;                       // time step size (in s)
+tAvg                0;                          // time when to start averaging (in s)
+tEnd                2.44;                         // end time of simulation (in s) (NOTE: only if not controlled by meancalc or lower than mcMaxRunCTU)
+writeInterval_      200;            // Restart write interval
+fieldAvgOutInterval 200;
+nCores              16;             // Number of cores used for simulation
+
