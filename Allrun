@@ -2,18 +2,21 @@
 ### Script setting up a new performance campaign with the EXASIM benchmarks
 ### Upstream CFD, 2025
 
-CAMPAIGN_NAME="20250606"
+CAMPAIGN_NAME="20250806"
 ENVIRONMENT_FILE="./scripts/hkn/loadModules"
 
 source $ENVIRONMENT_FILE
 export OBR_RUN_CMD="mpirun --bind-to core -mca coll_hcoll_enable 0 -np {np} {solver} {solverargs} -parallel -case {path}/case > {path}/case/{solver}_{timestamp}.log 2>&1"
 
-#CASES=(periodicChannelFlow atmFlatTerrain WindsorBody ImpingingJet MEXICO_ALM)
-CASES=(atmFlatTerrain WindsorBody MEXICO_ALM)
-YAMLS=(performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml)
-#YAMLS=(performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml)
-NJOBSPERSTUDY=(32 22 24)  
-#NJOBSPERSTUDY=(16 32 22 22 24)  
+CASES=(periodicChannelFlow atmFlatTerrain WindsorBody ImpingingJet MEXICO_ALM LidDrivenCavity3D drivAer_AutoCFD)
+#CASES=(atmFlatTerrain WindsorBody MEXICO_ALM)
+#CASES=(WindsorBody)
+#YAMLS=(performance_study_v2.yaml)
+#YAMLS=(performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml)
+YAMLS=(performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml performance_study_v2.yaml)
+#NJOBSPERSTUDY=(22)  
+#NJOBSPERSTUDY=(32 22 24)  
+NJOBSPERSTUDY=(16 32 22 22 24 28 24)  
 
 # --- Parameters ---
 MAX_JOBS=100
@@ -91,14 +94,14 @@ while [[ $ALL_SUBMITTED -eq 0 ]]; do
             pushd "$case_dir" > /dev/null
 
             # Run CUDA submission
-            obr submit --filter executor==cuda --partition accelerated --time "04:00:00" \
+            obr submit --filter executor==cuda --partition accelerated --time "16:00:00" \
                 --template ../scheduler_templates/horeka_ranksPerGPU.sh -o simulate \
                 --scheduler_args "account hk-project-exasim gpus_per_node 4" --max_queue_size 100
 
             sleep 10  # Optional: give scheduler a breather
 
             # Run CPU submission
-            obr submit --filter executor==CPU --partition cpuonly --time "04:00:00" \
+            obr submit --filter executor==CPU --partition cpuonly --time "16:00:00" \
                 --template ../scheduler_templates/horeka_new.sh -o simulate \
                 --scheduler_args "account hk-project-exasim tasks_per_node 76" --max_queue_size 100
 
