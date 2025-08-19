@@ -528,7 +528,7 @@ def main():
         ax.grid(which='major', linestyle='--', linewidth=0.5, alpha=0.6)
         if y_field in ('cost_on','cost_rs','fvops','throughput'):
             ax.grid(which='minor', axis='y', linestyle='--', linewidth=0.5, alpha=0.6)
-        ax.legend(fontsize=10, loc=(1.05, 0.4))
+        ax.legend(fontsize=10, loc=(1.05, 0.3))
         _apply_cells_per_device_twin(ax, nCells_ref)
         plt.tight_layout()
         out_path = os.path.join(out_dir, f"{outname}.png")
