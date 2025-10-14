@@ -63,24 +63,14 @@ potentialFlow
 
 PIMPLE
 {
-    nOuterCorrectors           30;      // max. no. iterations per time step
+    nOuterCorrectors           10;      // max. no. iterations per time step
     nCorrectors                1;
     nNonOrthogonalCorrectors   0;
     finalOnLastPimpleIterOnly  true;
     turbOnFinalIterOnly        true;  // Need to implement switch to adjust turbVariableFinal tolerances if used,
     residualControl
-    
     {
-        p
-        {
-            tolerance 0;
-            relTol    1e-1;
-        }
-        U
-        {
-            tolerance 0;
-            relTol    1e-3;
-        }
+
     }
 }
 
