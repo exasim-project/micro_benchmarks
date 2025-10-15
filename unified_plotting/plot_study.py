@@ -216,14 +216,17 @@ def main():
         unit = spec.get('unit', 's')
         ndt = int(spec.get('ndt', 100))
         nPISOCorr = float(spec.get('nPISOCorr', 1.0))
-        cpu_on = float(spec.get('cpu_hr_ondemand', 0.086953125))
-        cpu_rsv = float(spec.get('cpu_hr_reserved', 0.03742))
-        gpu_on = float(spec.get('gpu_hr_ondemand', 2.74470525))
-        gpu_rsv = float(spec.get('gpu_hr_reserved', 1.17175))
         cpu_cores_per_node = int(spec.get('cpu_cores_per_node', 76))
         gpus_per_node = int(spec.get('gpus_per_node', 4))
         default_ranks_per_gpu = int(spec.get('default_ranks_per_gpu', 1))
-        study_mode = spec.get('study_mode', 'cpu')
+        # auto-detect study mode
+        gpu_on = float(spec.get('gpu_hr_ondemand', 0.0) or 0.0)
+        gpu_rsv = float(spec.get('gpu_hr_reserved', 0.0) or 0.0)
+        cpu_on = float(spec.get('cpu_hr_ondemand', 0.086953125))
+        cpu_rsv = float(spec.get('cpu_hr_reserved', 0.03742))
+        study_mode = spec.get('study_mode')
+        if not study_mode:
+            study_mode = 'gpu' if (gpu_on > 0 or gpu_rsv > 0) else 'cpu'
         var_key = spec.get('variation_key', 'preconditioner')
         var_map = spec.get('variation_map', {}) or {}
 
@@ -283,7 +286,7 @@ def main():
 
         if same_case: _apply_nDevices_twin(ax, nCells_ref,xlabel_top)
         ax.grid(which='major', linestyle='--', linewidth=0.5, alpha=0.6)
-        ax.legend(fontsize=10, loc=(1.05, 0.2))
+        ax.legend(fontsize=10, loc=(1.05, -0.1))
         plt.tight_layout()
         out_png = os.path.join(out_dir, f"{args.outname}_{y_field}.png")
         plt.savefig(out_png, dpi=300)
