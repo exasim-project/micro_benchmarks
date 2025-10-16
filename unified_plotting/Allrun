@@ -1,47 +1,56 @@
 #!/bin/bash 
 
-./plot_study_final.py \
+./plot_study.py \
 --input '[{
-  "path": "postpro_c8gn.json",
+  "path": "../WindsorBody_NEON_ref/postpro.json",
   "times_key": "clockTimeDelta",
   "unit": "s",
-  "cpu_hr_ondemand": 0.05925,
-  "cpu_hr_reserved": 0.01872448,
+  "cpu_hr_ondemand": 0.085,
+  "cpu_hr_reserved": 0.0325709375,
+  "nPISOCorr": 4,
   "variation_key": "preconditioner",
   "variation_map": {
-    "FDIC": "c8gn.48xl\n(PCG solver)",
-    "none": "c8gn.48xl\n(GAMG solver)"
+    "DIC": "OF: CPU\n(Case setup v1)",
+    "none": "OF: CPU\n(GAMG solver)"
   },
-  "cpu_cores_per_node": 192
+  "cpu_cores_per_node": 76
 },
 {
-  "path": "postpro_hpc7a_opt_ompi5.json",
+  "path": "../WindsorBody_20250806/postpro.json",
   "times_key": "clockTimeDelta",
   "unit": "s",
-  "cpu_hr_ondemand": 0.0375,
-  "cpu_hr_reserved": 0.017625,
+  "cpu_hr_ondemand": 0.085,
+  "cpu_hr_reserved": 0.0325709375,
+  "gpu_hr_ondemand": 2.74470525,
+  "gpu_hr_reserved": 1.0198803125,
   "variation_key": "preconditioner",
   "variation_map": {
-    "FDIC": "hpc7a.96xl\n(PCG solver)",
-    "none": "hpc7a.96xl\n(GAMG solver)"
+    "FDIC": "OF: CPU\n(EXASIM setup)",
+    "none": "OF: CPU\n(GAMG solver)",
+    "BJ": "OGL: CPU+GPU\n(Ginkgo CG solver\n+ Block Jacobi precond.)",
+    "{ preconditioner Multigrid; caching 150; }": "OGL: CPU+GPU\n(Ginkgo CG solver\n+ Multigrid precond.)"
   },
-  "cpu_cores_per_node": 192
+  "cpu_cores_per_node": 76
 },
 {
-  "path": "postpro_c7i_opt.json",
+  "path": "../WindsorBody_SPUMA_cineca_v2/postpro.json",
   "times_key": "clockTimeDelta",
   "unit": "s",
-  "cpu_hr_ondemand": 0.08925,
-  "cpu_hr_reserved": 0.0341997,
+  "cpu_hr_ondemand": 0.085,
+  "cpu_hr_reserved": 0.0325709375,
+  "gpu_hr_ondemand": 2.74470525,
+  "gpu_hr_reserved": 1.0198803125,
   "variation_key": "preconditioner",
   "variation_map": {
-    "FDIC": "c7i.48xl\n(PCG solver)",
-    "none": "c7i.48xl\n(GAMG solver)"
+    "aDIC": "SPUMA: GPU\n(EXASIM setup)",
+    "none": "SPUMA: GPU\n(GAMG solver)"
   },
-  "cpu_cores_per_node": 96
+  "cpu_cores_per_node": 76,
+  "gpus_per_node": 4
 }]' \
-  --outdir newtest \
-  --outname newtest \
+  --outdir neon_reference_v1 \
+  --outname neon_reference_v1 \
   --color-scope global \
-  --compare-base 'c8gn' \
-  --compare-match 'hpc7a,c7i'
+  --skip 'GAMG' \
+  --compare-base 'Case setup v1' \
+  --compare-match 'EXASIM'

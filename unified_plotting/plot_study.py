@@ -113,11 +113,47 @@ def _normalize_key_for_map(key, var_map):
             return mk
     return s
 
+def _entry_has_ogl_marker(el):
+    return 'ranksPerGPU' in el and el.get('ranksPerGPU') is not None
+
+def _divides(x, by):
+    try:
+        return (int(x) % int(by)) == 0
+    except Exception:
+        return False
+
+def _infer_mode_for_entry(el, cpu_cores_per_node, gpus_per_node, gpu_on, gpu_rsv):
+    """Detect mode per entry, prefer CPU when ambiguous."""
+    # Explicit OGL marker
+    if 'ranksPerGPU' in el and el.get('ranksPerGPU') not in (None, 0):
+        return 'ogl'
+
+    p = int(el.get('numberOfSubdomains', 0))
+    div_cpu = _divides(p, cpu_cores_per_node)
+    div_gpu = _divides(p, gpus_per_node)
+
+    # --- clear cases ---
+    if div_cpu and not div_gpu:
+        return 'cpu'
+    if div_gpu and not div_cpu:
+        # GPU-like, but only trust it if study actually has GPU pricing
+        if gpu_on > 0 or gpu_rsv > 0:
+            return 'gpu'
+        else:
+            return 'cpu'
+
+    # --- ambiguous (both divisible): prefer CPU ---
+    if div_cpu and div_gpu:
+        return 'cpu'
+
+    # --- fallback ---
+    if gpu_on > 0 or gpu_rsv > 0:
+        return 'gpu'
+    return 'cpu'
 # -------------------- DATA PREP --------------------
 def prepare_dataset(entries, ndt, nPISOCorr, variation_key, var_map,
                     cpu_on, cpu_rsv, gpu_on, gpu_rsv,
-                    gpus_per_node, cpu_cores_per_node, default_ranks_per_gpu,
-                    study_mode):
+                    gpus_per_node, cpu_cores_per_node, default_ranks_per_gpu):
     if not entries:
         return 0, {}, None
 
@@ -141,23 +177,47 @@ def prepare_dataset(entries, ndt, nPISOCorr, variation_key, var_map,
 
         times = float(el['_times_sec'])
         procs = int(el.get('numberOfSubdomains', 0))
-        ranks_per_gpu = int(el.get('ranksPerGPU', default_ranks_per_gpu))
         nCells_el = float(el.get('nCells', nCells))
 
-        nodes = procs / (gpus_per_node if study_mode == 'gpu' else cpu_cores_per_node)
+        # --- auto-detect mode per entry ---
+        mode = _infer_mode_for_entry(el, cpu_cores_per_node, gpus_per_node, gpu_on, gpu_rsv)
+        ranks_per_gpu = int(el.get('ranksPerGPU', default_ranks_per_gpu)) if mode == 'ogl' else default_ranks_per_gpu
+
+        # --- nodes for cost computation ---
+        if mode == 'cpu':
+            nodes = procs / cpu_cores_per_node if cpu_cores_per_node else 0.0
+        else:  # gpu or ogl
+            nodes = procs / gpus_per_node if gpus_per_node else 0.0
+
+        # --- performance metrics ---
         pimple = el.get('PIMPLE_count', 0.5 * (ndt - 1))
         iter_per_dt = (nPISOCorr * ((pimple * 2) / (ndt - 1))) if (ndt - 1) else 0.0
 
-        fvops = (nCells_el * iter_per_dt) / (times * (procs / ranks_per_gpu)) if times > 0 and procs > 0 else 0.0
+        n_devices = procs / ranks_per_gpu if (mode == 'ogl' and ranks_per_gpu > 0) else procs
+        fvops = (nCells_el * iter_per_dt) / (times * n_devices) if times > 0 and n_devices > 0 else 0.0
         throughput = (nCells_el * iter_per_dt) / times if times > 0 else 0.0
 
-        on, rsv = (cpu_on, cpu_rsv) if study_mode == 'cpu' else (gpu_on, gpu_rsv)
-        if iter_per_dt > 0:
-            denom_n = (cpu_cores_per_node * nodes) if study_mode == 'cpu' else (gpus_per_node * nodes)
+        # --- correct pricing per mode ---
+        if mode == 'cpu':
+            on, rsv = cpu_on, cpu_rsv
+            denom_n = cpu_cores_per_node * nodes
+        elif mode == 'gpu':
+            on, rsv = gpu_on, gpu_rsv
+            denom_n = gpus_per_node * nodes  # fine: scales with GPU count
+        else:  # ogl
+            on, rsv = gpu_on, gpu_rsv
+            # GPUs = procs / ranks_per_gpu
+            gpus_used = procs / ranks_per_gpu if ranks_per_gpu else 0.0
+            denom_n = gpus_used  # cost scales with GPU count only
+
+        if iter_per_dt > 0 and denom_n and nCells_el:
             cost_on = ((on / 3600.0) * (times / iter_per_dt) * denom_n) / nCells_el
             cost_rs = ((rsv / 3600.0) * (times / iter_per_dt) * denom_n) / nCells_el
         else:
             cost_on = cost_rs = 0.0
+
+        # (optional) keep for debugging
+        el['_detected_mode'] = mode
 
         d = out[var_key]
         d['cells_per_device'].append(nCells_el / procs if procs > 0 else 0.0)
@@ -224,9 +284,9 @@ def main():
         gpu_rsv = float(spec.get('gpu_hr_reserved', 0.0) or 0.0)
         cpu_on = float(spec.get('cpu_hr_ondemand', 0.086953125))
         cpu_rsv = float(spec.get('cpu_hr_reserved', 0.03742))
-        study_mode = spec.get('study_mode')
-        if not study_mode:
-            study_mode = 'gpu' if (gpu_on > 0 or gpu_rsv > 0) else 'cpu'
+        #study_mode = spec.get('study_mode')
+        #if not study_mode:
+        #    study_mode = 'gpu' if (gpu_on > 0 or gpu_rsv > 0) else 'cpu'
         var_key = spec.get('variation_key', 'preconditioner')
         var_map = spec.get('variation_map', {}) or {}
 
@@ -239,8 +299,8 @@ def main():
         nCells, data, pKey = prepare_dataset(
             arr, ndt, nPISOCorr, var_key, var_map,
             cpu_on, cpu_rsv, gpu_on, gpu_rsv,
-            gpus_per_node, cpu_cores_per_node, default_ranks_per_gpu,
-            study_mode
+            gpus_per_node, cpu_cores_per_node, default_ranks_per_gpu#,
+           # study_mode
         )
         studies.append({'nCells': nCells, 'data': data, 'var_map': var_map, 'label': label, 'pKey': pKey})
 
