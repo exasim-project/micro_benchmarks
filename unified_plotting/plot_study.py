@@ -1,583 +1,368 @@
 #!/usr/bin/env python3
 """
-Unified plotting script with multi-dataset input, flexible time keys/units,
-per-study variation grouping, per-study CPU/GPU override, flexible cost mapping
-(instance or arbitrary key=value), and per-study hardware layout (GPUs/CPUs
-per node, default ranksPerGPU).
+Unified plotting for multi-study comparisons with per-study variation/cost, figure-specific
+overrides, global/per-study color scope, optional skipping of variants, and comparison
+metrics (DER, CTSF, TTSF) based on FVOPS max.
 
-All studies passed via --input are plotted together on the same axes:
-- Study 1: solid + circle ('-', 'o')
-- Study 2: dotted + square (':', 's')
-- Study 3: dashdot + x ('-.', 'x')
-- Study 4+: fallbacks
+Now uses --input as a JSON array of study objects.
+Example:
 
-Outputs (under --outdir), one combined image per metric:
-  - fvops_per_device/       (FVOPS/device)              [y-log]
-  - throughput_raw/         (nCells * iter_per_dt / t)
-  - cost_ondemand/          ($/TFVO on-demand)          [scaled by 1e12]
-  - cost_reserved/          ($/TFVO reserved)           [scaled by 1e12]
-  - time_per_timestep/      (seconds per timestep)      [y-log]
-  - pressure_iterations/    (p_NoIterations or p_rgh_NoIterations) [y-log]
-
-Usage (example):
-  python plot_study.py \
-    --input path=/path/A.json,times_key=TimeStep,unit=ms,ndt=120,nPISOCorr=1.5,label="Study A",gpus_per_node=8,cpu_cores_per_node=128,default_ranks_per_gpu=8,variation_key=preconditioner,variation_map="FDIC=OF: CPU\\n(PCG solver),none=OF: CPU\\n(GAMG solver)",cpu_on=0.09,cpu_rsv=0.06,gpu_on=2.8,gpu_rsv=2.1 \
-    --input path=/path/B.json,label="Study B",gpus_per_node=4,cpu_cores_per_node=64,study_mode=gpu,variation_key=solverType,variation_map="BJ=OGL: CPU+GPU\\n(Ginkgo CG solver\\n+ Block Jacobi precond.),GKOMG=OGL: CPU+GPU\\n(Ginkgo CG solver\\n+ Multigrid precond.)",gpu_hr_ondemand=3.6,gpu_hr_reserved=2.6 \
-    --default-gpu-hr-ondemand 2.74470525 --default-cpu-core-hr-ondemand 0.086953125 \
-    --default-gpu-hr-reserved 1.17175    --default-cpu-core-hr-reserved 0.03742 \
-    --instance-cost "c8g.48xlarge:cpu:0.087:0.060,H100:gpu:3.60:2.60" \
-    --cost-group "preconditioner=FDIC:cpu:0.087:0.060,preconditioner=none:cpu:0.087:0.060" \
-    --outdir plots
+--input '[{
+  "path": "postpro_c8gn.json",
+  "times_key": "clockTimeDelta",
+  "unit": "s",
+  "cpu_hr_ondemand": 0.05925,
+  "cpu_hr_reserved": 0.01872448,
+  "variation_key": "preconditioner",
+  "variation_map": {
+    "FDIC": "c8gn.48xl<br>(PCG solver)",
+    "none": "c8gn.48xl<br>(GAMG solver)"
+  },
+  "cpu_cores_per_node": 192
+},
+{
+  "path": "postpro_hpc7a_opt_ompi5.json",
+  "times_key": "clockTimeDelta",
+  "unit": "s",
+  "cpu_hr_ondemand": 0.0375,
+  "cpu_hr_reserved": 0.017625,
+  "variation_key": "preconditioner",
+  "variation_map": {
+    "FDIC": "hpc7a.96xl<br>(PCG solver)",
+    "none": "hpc7a.96xl<br>(GAMG solver)"
+  },
+  "cpu_cores_per_node": 192
+}]'
 """
 
-import os
-import json
-import argparse
+import os, json, argparse, csv
 import numpy as np
 import matplotlib.pyplot as plt
 from cycler import cycler
 
-# ----------------------------------------------------------------------------------------
-# (1)   GLOBAL PLOTTING PARAMETERS  (UNCHANGED STYLE)
-# ----------------------------------------------------------------------------------------
-ucfdGrey        = '#626366'
-ucfdLightGrey   = '#EFEFF0'
-ucfdBlue        = '#1C81AC'
-ucfdLightBlue   = '#5BBCE4'
-ucfdGreen       = '#206869'
-ucfdLightGreen  = '#61BF80'
-ucfdPurple      = '#954F72'
-ucfdOrange      = '#EAB30E'
+# -------------------- STYLE --------------------
+ucfdGrey, ucfdLightGrey = '#626366', '#EFEFF0'
+ucfdBlue, ucfdLightBlue = '#1C81AC', '#5BBCE4'
+ucfdGreen, ucfdLightGreen = '#206869', '#61BF80'
+ucfdPurple, ucfdOrange = '#954F72', '#EAB30E'
 
-plt.rcParams['font.size']             = '16'
-plt.rcParams['text.color']            = ucfdGrey
-plt.rcParams['axes.labelsize']        = '16'
-plt.rcParams['xtick.labelsize']       = '16'
-plt.rcParams['ytick.labelsize']       = '16'
-plt.rcParams['lines.markersize']      = 4
-plt.rcParams['lines.markeredgewidth'] = 1
-plt.rcParams['lines.linewidth']       = 2.5
-plt.rcParams['lines.color']           = ucfdGrey
-plt.rcParams['legend.edgecolor']      = ucfdBlue
-plt.rcParams['axes.edgecolor']        = ucfdGrey
-plt.rcParams['axes.labelcolor']       = ucfdGrey
-plt.rcParams['axes.prop_cycle']       = cycler(
-    'color',
-    [
+plt.rcParams.update({
+    'font.size': 16,
+    'text.color': ucfdGrey,
+    'axes.labelsize': 16,
+    'xtick.labelsize': 16,
+    'ytick.labelsize': 16,
+    'lines.markersize': 4,
+    'lines.markeredgewidth': 1,
+    'lines.linewidth': 2.5,
+    'legend.edgecolor': ucfdBlue,
+    'axes.edgecolor': ucfdGrey,
+    'axes.labelcolor': ucfdGrey,
+    'xtick.color': ucfdGrey,
+    'ytick.color': ucfdGrey,
+    'axes.prop_cycle': cycler('color', [
         ucfdGrey, ucfdBlue, ucfdLightGreen, ucfdPurple, ucfdOrange,
         ucfdLightBlue, ucfdGreen, '#1f77b4', '#ff7f0e', '#2ca02c',
-        '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f',
-        '#bcbd22', '#17becf'
-    ]
-)
-plt.rcParams['xtick.color']           = ucfdGrey
-plt.rcParams['ytick.color']           = ucfdGrey
-plt.rcParams['grid.color']            = ucfdLightGrey
+        '#d62728', '#9467bd', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
+    ]),
+    'grid.color': ucfdLightGrey,
+    'grid.alpha': 0.6,
+})
 
-# ----------------------------------------------------------------------------------------
-# (2)   Helpers
-# ----------------------------------------------------------------------------------------
-def _smart_split_commas(s: str):
-    """Split on commas, honoring backslash-escaping (\,) to keep commas inside fields."""
-    parts, cur, esc = [], [], False
-    for ch in s:
-        if esc:
-            cur.append(ch); esc = False
-        elif ch == '\\':
-            esc = True
-        elif ch == ',':
-            parts.append(''.join(cur).strip()); cur = []
-        else:
-            cur.append(ch)
-    parts.append(''.join(cur).strip())
-    return [p for p in parts if p]
+_PALETTE = plt.rcParams['axes.prop_cycle'].by_key()['color']
+_STYLES = [
+    {'linestyle': '-',  'marker': 'o'},
+    {'linestyle': ':',  'marker': 's'},
+    {'linestyle': '-.', 'marker': 'x'},
+    {'linestyle': '--', 'marker': '^'},
+    {'linestyle': (0, (1, 1)), 'marker': 'd'},
+]
 
-def _normalize_nl(txt: str) -> str:
-    """Accept '\n' and '<br>' as line breaks in CLI strings."""
-    return txt.replace("\\n", "\n").replace("<br>", "\n")
-
-def _parse_variation_map(s: str):
-    """Plain string map like 'FDIC=Label\\n,none=Label2'. Commas in labels must be escaped as '\\,'."""
-    if not s: return {}
-    out = {}
-    for item in _smart_split_commas(s):
-        if '=' not in item:
-            continue
-        k, v = item.split('=', 1)
-        out[k.strip()] = _normalize_nl(v.strip())
-    return out
-
-def _parse_variation_map_json_string(s: str):
-    """JSON string for {value: label, ...}."""
-    data = json.loads(s)
-    return {k: _normalize_nl(str(v)) for k, v in data.items()}
-
-def _parse_variation_map_file(path: str):
-    with open(path, 'r') as f:
-        data = json.load(f)
-    return {k: _normalize_nl(str(v)) for k, v in data.items()}
-
-def _parse_input_spec(s: str):
-    """
-    Parse one --input spec:
-      'path=...[,times_key=clockTimeDelta][,unit=s][,ndt=100][,nPISOCorr=1.0]
-               [,label=...][,gpus_per_node=4][,cpu_cores_per_node=76][,default_ranks_per_gpu=19]
-               [,variation_key=...]
-               [,variation_map=val=Label\\n,val2=Label2\\n,...]    # escape commas in labels as \\\\,
-               [,variation_map_json={...}] or [,variation_map_file=/path/to/map.json]
-               [,study_mode=cpu|gpu]
-               [,cpu_on=...][,cpu_rsv=...][,gpu_on=...][,gpu_rsv=...]
-               [,cpu_hr_ondemand=...][,cpu_hr_reserved=...][,gpu_hr_ondemand=...][,gpu_hr_reserved=...]'
-    """
-    # Known keys for the first-level k=v pairs in --input
-    KNOWN = {
-        'path','times_key','unit','ndt','nPISOCorr','label',
-        'gpus_per_node','cpu_cores_per_node','default_ranks_per_gpu',
-        'variation_key','variation_map','variation_map_json','variation_map_file',
-        'study_mode',
-        # per-study price overrides (short + aliases)
-        'cpu_on','cpu_rsv','gpu_on','gpu_rsv',
-        'cpu_hr_ondemand','cpu_hr_reserved','gpu_hr_ondemand','gpu_hr_reserved'
-    }
-    out = {
-        'times_key': 'clockTimeDelta',
-        'unit': 's',
-        'ndt': 100,
-        'nPISOCorr': 1.0,
-        'gpus_per_node': 4,
-        'cpu_cores_per_node': 76,
-        'default_ranks_per_gpu': 1,   # kept as in your file
-        'study_mode': None,
-    }
-    vm_extras = []  # collect stray 'key=value' items likely belonging to variation_map
-
-    for part in _smart_split_commas(s):
-        if not part or '=' not in part:
-            continue
-        k, v = part.split('=', 1)
-        k = k.strip(); v = v.strip()
-        if k in ('ndt','gpus_per_node','cpu_cores_per_node','default_ranks_per_gpu'):
-            out[k] = int(v)
-        elif k == 'nPISOCorr':
-            out[k] = float(v)
-        elif k == 'study_mode':
-            vv = v.lower()
-            if vv not in ('cpu','gpu'):
-                raise ValueError("study_mode must be 'cpu' or 'gpu'")
-            out[k] = vv
-        elif k in ('cpu_on','cpu_rsv','gpu_on','gpu_rsv',
-                   'cpu_hr_ondemand','cpu_hr_reserved','gpu_hr_ondemand','gpu_hr_reserved'):
-            # store as float; aliases normalized later
-            try:
-                out[k] = float(v)
-            except Exception:
-                raise ValueError(f"{k} must be a float, got {v!r}")
-        elif k in KNOWN:
-            out[k] = v
-        else:
-            # Unknown top-level key inside --input: treat as a variation_map entry like 'FDIC=...'
-            vm_extras.append((k, v))
-
-    if 'path' not in out:
-        raise ValueError("Each --input needs at least path=...")
-    if out['unit'] not in ('ms','s'):
-        raise ValueError("unit must be 'ms' or 's'")
-
-    # Normalize price alias keys to short names if provided
-    if 'cpu_hr_ondemand' in out: out['cpu_on'] = out.get('cpu_on', out['cpu_hr_ondemand'])
-    if 'cpu_hr_reserved'  in out: out['cpu_rsv'] = out.get('cpu_rsv', out['cpu_hr_reserved'])
-    if 'gpu_hr_ondemand' in out: out['gpu_on'] = out.get('gpu_on', out['gpu_hr_ondemand'])
-    if 'gpu_hr_reserved'  in out: out['gpu_rsv'] = out.get('gpu_rsv', out['gpu_hr_reserved'])
-    out.pop('cpu_hr_ondemand', None)
-    out.pop('cpu_hr_reserved', None)
-    out.pop('gpu_hr_ondemand', None)
-    out.pop('gpu_hr_reserved', None)
-
-    # If user supplied variation_map as plain string, parse it
-    var_map_dict = {}
-    if 'variation_map' in out:
-        var_map_dict = _parse_variation_map(out['variation_map'])
-        out.pop('variation_map', None)
-
-    # Merge any stray 'key=value' entries into the variation map dict
-    for kk, vv in vm_extras:
-        var_map_dict[kk.strip()] = _normalize_nl(vv.strip())
-
-    # If JSON or file is provided, that takes precedence
-    if 'variation_map_file' in out:
-        var_map_dict = _parse_variation_map_file(out['variation_map_file'])
-        out.pop('variation_map_file', None)
-    elif 'variation_map_json' in out:
-        var_map_dict = _parse_variation_map_json_string(out['variation_map_json'])
-        out.pop('variation_map_json', None)
-
-    if var_map_dict:
-        out['variation_map_dict'] = var_map_dict
-
-    return out
-
-def _parse_instance_cost(s: str):
-    """Parse INST:MODE:ON:RSV entries; MODE in {cpu,gpu}; ON/RSV are per core-hr or per GPU-hr."""
-    if not s: return {}
-    out = {}
-    for item in _smart_split_commas(s):
-        inst, mode, on, rsv = item.split(':', 3)
-        out[inst.strip()] = (mode.strip().lower(), float(on), float(rsv))
-    return out
-
-def _parse_cost_groups(s: str):
-    """Parse KEY=VALUE:MODE:ON:RSV entries; MODE in {cpu,gpu}."""
-    if not s: return []
-    out = []
-    for item in _smart_split_commas(s):
-        kv, mode, on, rsv = item.split(':', 3)
-        key, val = kv.split('=', 1)
-        out.append((key.strip(), val.strip(), mode.strip().lower(), float(on), float(rsv)))
-    return out
-
+# -------------------- HELPERS --------------------
 def _ensure_dirs(base, *subs):
-    paths = []
     os.makedirs(base, exist_ok=True)
+    paths = []
     for sub in subs:
         p = os.path.join(base, sub)
         os.makedirs(p, exist_ok=True)
         paths.append(p)
     return paths
 
-def _apply_cells_per_device_twin(ax, nCells):
+def _apply_nDevices_twin(ax, nCells,main_label):
     sec = ax.twiny()
     sec.set_xscale('log')
-    p_lo, p_hi = ax.get_xlim()
-    sec.set_xlim(nCells/p_hi, nCells/p_lo)
-    sec.xaxis.set_inverted(True)
-    sec.set_xlabel('cells/device')
+    c_lo, c_hi = ax.get_xlim()
+    sec.set_xlim(nCells / c_lo, nCells / c_hi)
+    sec.set_xlabel(main_label, color=ucfdGrey)
+    sec.tick_params(axis='x', colors=ucfdGrey)
     return sec
 
-# Color palette identical to rc cycle order (so we can “reset” per study)
-_PALETTE = [
-    ucfdGrey, ucfdBlue, ucfdLightGreen, ucfdPurple, ucfdOrange,
-    ucfdLightBlue, ucfdGreen, '#1f77b4', '#ff7f0e', '#2ca02c',
-    '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f',
-    '#bcbd22', '#17becf'
-]
+def _normalize_key_for_map(key, var_map):
+    """Ensure keys like 'none', None, or 'None' normalize and match map keys."""
+    if key is None:
+        s = 'none'
+    else:
+        s = str(key).strip()
+        if s.lower() == 'none':
+            s = 'none'
+    if s in var_map:
+        return s
+    sl = s.lower()
+    for mk in var_map.keys():
+        if str(mk).strip().lower() == sl:
+            return mk
+    return s
 
-# Per-study linestyle/marker
-_STUDY_STYLES = [
-    {'linestyle': '-',  'marker': 'o'},  # 1st study
-    {'linestyle': ':',  'marker': 's'},  # 2nd study
-    {'linestyle': '-.', 'marker': 'x'},  # 3rd study
-    {'linestyle': '--', 'marker': '^'},  # 4th
-    {'linestyle': (0, (1, 1)), 'marker': 'd'},  # 5th
-]
-
-# ----------------------------------------------------------------------------------------
-# (3)   Core calculations
-# ----------------------------------------------------------------------------------------
-def prepare_dataset(
-    entries, ndt, nPISOCorr, variation_key,
-    default_cpu_on, default_cpu_rs, default_gpu_on, default_gpu_rs,
-    instance_cost_map, cost_groups,
-    gpus_per_node, cpu_cores_per_node, default_ranks_per_gpu,
-    study_mode=None
-):
+# -------------------- DATA PREP --------------------
+def prepare_dataset(entries, ndt, nPISOCorr, variation_key, var_map,
+                    cpu_on, cpu_rsv, gpu_on, gpu_rsv,
+                    gpus_per_node, cpu_cores_per_node, default_ranks_per_gpu,
+                    study_mode):
     if not entries:
         return 0, {}, None
 
-    entries = sorted(entries, key=lambda el: int(el['numberOfSubdomains']))
+    entries = sorted(entries, key=lambda e: int(e.get('numberOfSubdomains', 0)))
     nCells = entries[0].get('nCells', 0)
-    pKey = 'p_NoIterations' if 'p_NoIterations' in entries[0] else 'p_rgh_NoIterations'
+    pKey = (
+        'p_NoIterations' if 'p_NoIterations' in entries[0] else
+        'p_rgh_NoIterations' if 'p_rgh_NoIterations' in entries[0] else
+        'pItersPerDtMean' if 'pItersPerDtMean' in entries[0] else None
+    )
 
     out = {}
     for el in entries:
-        var_val = str(el.get(variation_key, ''))
-        if var_val not in out:
-            out[var_val] = {
-                'times':[], 'procs':[], 'nodes':[], 'pIter':[],
-                'fvops':[], 'throughput':[],
-                'cost_on':[], 'cost_rs':[]
+        var_val_raw = el.get(variation_key, None)
+        var_key = _normalize_key_for_map(var_val_raw, var_map)
+        if var_key not in out:
+            out[var_key] = {
+                'cells_per_device': [], 'times': [], 'fvops': [], 'throughput': [],
+                'cost_on': [], 'cost_rs': [], 'pIter': [], 'procs': []
             }
 
-        times = float(el['_times_sec'])  # normalized to seconds at load
-        procs = int(el['numberOfSubdomains'])
-        ranks_per_gpu = el.get('ranksPerGPU', default_ranks_per_gpu)  # still used for fvops denom
+        times = float(el['_times_sec'])
+        procs = int(el.get('numberOfSubdomains', 0))
+        ranks_per_gpu = int(el.get('ranksPerGPU', default_ranks_per_gpu))
+        nCells_el = float(el.get('nCells', nCells))
 
-        # Determine nodes: OGL if ranks_per_gpu > 1 or forced study_mode == 'ogl'
-        if ranks_per_gpu > 1 or study_mode == 'ogl':
-            is_ogl=True
-            nodes = procs / (gpus_per_node * ranks_per_gpu)
-        else:
-            is_ogl=False
-            if procs % cpu_cores_per_node == 0 or study_mode == 'cpu':
-                # pure CPU run
-                nodes = procs / float(cpu_cores_per_node)
-            else:
-                # pure GPU run
-                nodes = procs / float(gpus_per_node)
+        nodes = procs / (gpus_per_node if study_mode == 'gpu' else cpu_cores_per_node)
+        pimple = el.get('PIMPLE_count', 0.5 * (ndt - 1))
+        iter_per_dt = (nPISOCorr * ((pimple * 2) / (ndt - 1))) if (ndt - 1) else 0.0
 
-        pIter = el.get(pKey, 0)
-        pimple_count = el.get('PIMPLE_count', 0.5*(ndt-1))
-        iter_per_dt = (nPISOCorr * ((pimple_count * 2) / (ndt - 1)))
+        fvops = (nCells_el * iter_per_dt) / (times * (procs / ranks_per_gpu)) if times > 0 and procs > 0 else 0.0
+        throughput = (nCells_el * iter_per_dt) / times if times > 0 else 0.0
 
-        fvops = (nCells * iter_per_dt) / (times * (procs / ranks_per_gpu)) if times > 0 and procs > 0 else 0.0
-        throughput_raw = (nCells * iter_per_dt) / times if times > 0 else 0.0
-
-        # -------- Pricing resolution (with optional study-wide override) --------
-        mode = None; on = rsv = None
-        if study_mode in ('cpu','gpu','ogl'):
-            mode = 'gpu' if study_mode == 'ogl' else study_mode
-            if mode == 'cpu':
-                on, rsv = default_cpu_on, default_cpu_rs
-            else:
-                on, rsv = default_gpu_on, default_gpu_rs
-        else:
-            instance = el.get('instance')
-            if instance and instance in instance_cost_map:
-                mode, on, rsv = instance_cost_map[instance]
-            else:
-                for key, val, m, onf, rsvf in cost_groups:
-                    if str(el.get(key)) == val:
-                        mode, on, rsv = m, onf, rsvf
-                        break
-            if mode is None:
-                if procs % cpu_cores_per_node == 0 and not is_ogl :
-                    mode = 'cpu'; on, rsv = default_cpu_on, default_cpu_rs
-                else:
-                    mode = 'gpu'; on, rsv = default_gpu_on, default_gpu_rs
-        # -----------------------------------------------------------------------
+        on, rsv = (cpu_on, cpu_rsv) if study_mode == 'cpu' else (gpu_on, gpu_rsv)
         if iter_per_dt > 0:
-            if mode == 'cpu':
-                cost_on = ((on/3600) * (times/iter_per_dt) * (cpu_cores_per_node * nodes))/nCells
-                cost_rs  = ((rsv/3600) * (times/iter_per_dt) * (cpu_cores_per_node * nodes))/nCells
-            else:
-                cost_on = ((on/3600) * (times/iter_per_dt) * (gpus_per_node * nodes))/nCells
-                cost_rs  = ((rsv/3600) * (times/iter_per_dt) * (gpus_per_node * nodes))/nCells
+            denom_n = (cpu_cores_per_node * nodes) if study_mode == 'cpu' else (gpus_per_node * nodes)
+            cost_on = ((on / 3600.0) * (times / iter_per_dt) * denom_n) / nCells_el
+            cost_rs = ((rsv / 3600.0) * (times / iter_per_dt) * denom_n) / nCells_el
         else:
             cost_on = cost_rs = 0.0
-        # TODO: edge cases where procs divisible by both cores_per_node and gpus_per_node
-        d = out[var_val]
+
+        d = out[var_key]
+        d['cells_per_device'].append(nCells_el / procs if procs > 0 else 0.0)
         d['times'].append(times)
-        d['procs'].append(procs)
-        d['nodes'].append(nodes)
-        d['pIter'].append(pIter)
         d['fvops'].append(fvops)
-        d['throughput'].append(throughput_raw)
+        d['throughput'].append(throughput)
         d['cost_on'].append(cost_on)
         d['cost_rs'].append(cost_rs)
+        d['pIter'].append(el.get(pKey, 0) if pKey else 0)
+        d['procs'].append(procs)
 
     return nCells, out, pKey
 
-# ----------------------------------------------------------------------------------------
-# (4)   MAIN
-# ----------------------------------------------------------------------------------------
+def label_for(var_key, var_map, study_label):
+    k = _normalize_key_for_map(var_key, var_map)
+    base = var_map.get(k, k)
+    return base + (f"\n[{study_label}]" if study_label else "")
+
+# -------------------- MAIN --------------------
 def main():
-    ap = argparse.ArgumentParser(description='Unified plotting with per-study overrides; combined images; style preserved.')
-    ap.add_argument('--input', action='append', required=True,
-                    help='path=...[,times_key=clockTimeDelta][,unit=s][,ndt=100][,nPISOCorr=1.0]'
-                         '[,label=...][,gpus_per_node=4][,cpu_cores_per_node=76][,default_ranks_per_gpu=19]'
-                         '[,variation_key=...][,variation_map=val=Label\\n,...]'
-                         '[,variation_map_json={"k":"v"}][,variation_map_file=/path/map.json]'
-                         '[,study_mode=cpu|gpu]'
-                         '[,cpu_on=...][,cpu_rsv=...][,gpu_on=...][,gpu_rsv=...]'
-                         '[,cpu_hr_ondemand=...][,cpu_hr_reserved=...][,gpu_hr_ondemand=...][,gpu_hr_reserved=...]  (repeatable)')
-    # Optional global defaults (used if a study does not override)
-    ap.add_argument('--variation-key', required=False, default=None)
-    ap.add_argument('--variation-map', required=False, default=None,
-                    help=r'Comma-separated: val=Label (use \n or <br> for line breaks, escape commas as \,)')
-
-    # Default cost baselines
-    ap.add_argument('--default-gpu-hr-ondemand', type=float, default=2.74470525)
-    ap.add_argument('--default-cpu-core-hr-ondemand', type=float, default=0.086953125)
-    ap.add_argument('--default-gpu-hr-reserved', type=float, default=1.17175)
-    ap.add_argument('--default-cpu-core-hr-reserved', type=float, default=0.03742)
-
-    # Overrides
-    ap.add_argument('--instance-cost', default=None,
-                    help='INST:MODE:ON:RSV[,INST:MODE:ON:RSV...]  MODE in {cpu,gpu}')
-    ap.add_argument('--cost-group', default=None,
-                    help='KEY=VALUE:MODE:ON:RSV[,KEY=VALUE:MODE:ON:RSV...]')
-
-    ap.add_argument('--y-limits', nargs=2, type=float, metavar=('YMIN','YMAX'))
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--input', required=True,
+                    help='JSON array of study dicts (each contains path, variation_map, etc.)')
     ap.add_argument('--outdir', default='plots')
     ap.add_argument('--outname', default='study')
+    ap.add_argument('--color-scope', choices=['global','per-study'], default='per-study')
+    ap.add_argument('--skip', default=None)
+    ap.add_argument('--compare-base', default='OF: CPU')
+    ap.add_argument('--compare-match', default='c8gn,hpc7a,c7i,H100,H200')
+    ap.add_argument('--xlabel-top', default='nDevices')
+
+    for name in ['fvops','throughput','cost_on','cost_rs','times','pIter']:
+        ap.add_argument(f'--ylim-{name}', nargs=2, type=float)
+        ap.add_argument(f'--ylabel-{name}', default=None)
+        ap.add_argument(f'--xlabel-{name}', default=None)
 
     args = ap.parse_args()
+    studies_raw = json.loads(args.input)
+    if not isinstance(studies_raw, list):
+        raise ValueError("--input must be a JSON list of study objects")
 
-    # Global variation defaults (optional)
-    global_var_map = _parse_variation_map(args.variation_map) if args.variation_map else None
-    global_var_key = args.variation_key
-
-    instance_cost_map = _parse_instance_cost(args.instance_cost)
-    cost_groups = _parse_cost_groups(args.cost_group)
-    outname = args.outname
+    skip_list = [s.strip() for s in args.skip.split(',')] if args.skip else []
+    compare_targets = [s.strip() for s in args.compare_match.split(',')] if args.compare_match else []
 
     out_fvops, out_thr, out_cost_on, out_cost_rs, out_tstep, out_piter = _ensure_dirs(
-        args.outdir,
-        'fvops_per_device', 'throughput_raw', 'cost_ondemand', 'cost_reserved', 'time_per_timestep', 'pressure_iterations'
+        args.outdir, 'fvops_per_device', 'throughput_raw',
+        'cost_ondemand', 'cost_reserved', 'time_per_timestep', 'pressure_iterations'
     )
 
-    # Load all datasets -> list of studies (dicts)
+    # ---------- Load datasets ----------
     studies = []
-    for spec in args.input:
-        cfg = _parse_input_spec(spec)
-        path = cfg['path']
-        tkey = cfg.get('times_key', 'clockTimeDelta')
-        unit = cfg.get('unit', 's')
-        ndt = int(cfg.get('ndt', 100))
-        nPISOCorr = float(cfg.get('nPISOCorr', 1.0))
-        study_label = cfg.get('label')
-        gpus_per_node = int(cfg.get('gpus_per_node', 4))
-        cpu_cores_per_node = int(cfg.get('cpu_cores_per_node', 76))
-        default_ranks_per_gpu = int(cfg.get('default_ranks_per_gpu', 1))
-        study_mode = cfg.get('study_mode')
+    for spec in studies_raw:
+        path = spec['path']
+        label = spec.get('label')
+        tkey = spec.get('times_key', 'clockTimeDelta')
+        unit = spec.get('unit', 's')
+        ndt = int(spec.get('ndt', 100))
+        nPISOCorr = float(spec.get('nPISOCorr', 1.0))
+        cpu_cores_per_node = int(spec.get('cpu_cores_per_node', 76))
+        gpus_per_node = int(spec.get('gpus_per_node', 4))
+        default_ranks_per_gpu = int(spec.get('default_ranks_per_gpu', 1))
+        # auto-detect study mode
+        gpu_on = float(spec.get('gpu_hr_ondemand', 0.0) or 0.0)
+        gpu_rsv = float(spec.get('gpu_hr_reserved', 0.0) or 0.0)
+        cpu_on = float(spec.get('cpu_hr_ondemand', 0.086953125))
+        cpu_rsv = float(spec.get('cpu_hr_reserved', 0.03742))
+        study_mode = spec.get('study_mode')
+        if not study_mode:
+            study_mode = 'gpu' if (gpu_on > 0 or gpu_rsv > 0) else 'cpu'
+        var_key = spec.get('variation_key', 'preconditioner')
+        var_map = spec.get('variation_map', {}) or {}
 
-        # Per-study price overrides (fallback to globals)
-        cpu_on = float(cfg.get('cpu_on', args.default_cpu_core_hr_ondemand))
-        cpu_rsv = float(cfg.get('cpu_rsv', args.default_cpu_core_hr_reserved))
-        gpu_on = float(cfg.get('gpu_on', args.default_gpu_hr_ondemand))
-        gpu_rsv = float(cfg.get('gpu_rsv', args.default_gpu_hr_reserved))
-
-        # Per-study variation overrides (fallback to globals)
-        var_key = cfg.get('variation_key', global_var_key)
-        if 'variation_map_dict' in cfg:
-            var_map = cfg['variation_map_dict']
-        else:
-            var_map = global_var_map or {}
-        if not var_key:
-            raise ValueError("variation_key must be provided globally (--variation-key) or per study (variation_key=...)")
-        if not var_map:
-            raise ValueError("variation_map must be provided globally (--variation-map) or per study (variation_map=..., variation_map_json=..., or variation_map_file=...)")
-
-        with open(path, 'r') as f:
+        with open(path) as f:
             arr = json.load(f)
-        if not isinstance(arr, list) or not arr:
-            print(f"Warning: '{path}' empty or not a list; skipping.")
-            continue
-
-        # Normalize times to seconds
         for el in arr:
-            val = el.get(tkey, 0.0)
+            val = el.get(tkey, 0)
             el['_times_sec'] = (0.001 * float(val)) if unit == 'ms' else float(val)
 
-        case_name = os.path.basename(os.path.dirname(os.path.abspath(path))) or "case"
-
-        nCells, data_dict, pKey = prepare_dataset(
-            arr, ndt, nPISOCorr, var_key,
-            cpu_on, cpu_rsv, gpu_on, gpu_rsv,                      # <--- per-study prices applied here
-            instance_cost_map, cost_groups,
+        nCells, data, pKey = prepare_dataset(
+            arr, ndt, nPISOCorr, var_key, var_map,
+            cpu_on, cpu_rsv, gpu_on, gpu_rsv,
             gpus_per_node, cpu_cores_per_node, default_ranks_per_gpu,
-            study_mode=study_mode
+            study_mode
         )
-        if not data_dict:
-            continue
-
-        studies.append({
-            'case_name': case_name,
-            'nCells': nCells,
-            'data': data_dict,
-            'pKey': pKey,
-            'label': study_label,
-            'var_map': var_map
-        })
+        studies.append({'nCells': nCells, 'data': data, 'var_map': var_map, 'label': label, 'pKey': pKey})
 
     if not studies:
-        print("No valid datasets loaded; nothing to do.")
+        print("No valid datasets loaded.")
         return
 
-    # Use nCells of the first study for the twin axis (warn if they differ)
+    same_case = len({s['nCells'] for s in studies}) == 1
     nCells_ref = studies[0]['nCells']
-    if any(s['nCells'] != nCells_ref for s in studies):
-        print(f"Note: nCells differ across studies; using nCells={nCells_ref} for the cells/device twin axis.")
 
-    def label_for(var_val, var_map, study_label=None):
-        base = var_map.get(var_val, var_val)
-        return base + (f"\n[{study_label}]" if study_label else "")
+    def should_skip(lbl):
+        return any(x.lower() in lbl.lower() for x in skip_list)
 
-    setfig = (8.8, 4.8)
-
-    # ---- COMBINED plots (one image per metric) ----
-    def _plot_combined(y_field, ylabel, x_label, out_dir, scale_1e12=False, ylog=False, ylim=None):
-        fig, ax = plt.subplots(figsize=setfig, dpi=300)
-        ax.set_xscale('log')
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(ylabel)
+    # ---------- Plot function ----------
+    def _plot_combined(y_field, default_ylabel, out_dir, ylog=False, scale_1e12=False):
+        ylabel = getattr(args, f'ylabel_{y_field}') or default_ylabel
+        xlabel = getattr(args, f'xlabel_{y_field}') or "cells/device"
+        xlabel_top = getattr(args, f'xlabel_top') or "nDevices"
+        ylim = getattr(args, f'ylim_{y_field}')
+        fig, ax = plt.subplots(figsize=(8.8, 4.8), dpi=300)
+        ax.set_xscale('log'); ax.invert_xaxis()
         if ylog: ax.set_yscale('log')
         if ylim: ax.set_ylim(ylim)
+        ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
 
-        # Plot each study with its own style; reset palette per study
+        color_idx = 0
         for s_idx, s in enumerate(studies):
-            st = _STUDY_STYLES[s_idx % len(_STUDY_STYLES)]
-            palette = _PALETTE  # reset color order per study
-
+            style = _STYLES[s_idx % len(_STYLES)]
+            local_idx = 0
             present = set(s['data'].keys())
-            ordered_keys = [k for k in s['var_map'].keys() if k in present] + [k for k in present if k not in s['var_map']]
+            ordered_keys = [k for k in s['var_map'] if k in present] + [k for k in present if k not in s['var_map']]
+            for k in ordered_keys:
+                v = s['data'][k]
+                lbl = label_for(k, s['var_map'], s['label'])
+                if should_skip(lbl): continue
+                color = (_PALETTE[color_idx % len(_PALETTE)]
+                         if args.color_scope == 'global'
+                         else _PALETTE[local_idx % len(_PALETTE)])
+                x = np.array(v['cells_per_device']); y = np.array(v[y_field]) * (1e12 if scale_1e12 else 1)
+                ax.plot(x, y, linestyle=style['linestyle'], marker=style['marker'],
+                        color=color, label=lbl)
+                color_idx += 1; local_idx += 1
 
-            for i, k in enumerate(ordered_keys):
-                series = np.array(s['data'][k][y_field])
-                p = np.array(s['data'][k]['procs'])
-                color = palette[i % len(palette)]
-                y = (1e12 * series) if scale_1e12 else series
-                ax.plot(
-                    p, y,
-                    linestyle=st['linestyle'],
-                    marker=st['marker'],
-                    linewidth=2.5,
-                    color=color,
-                    label=label_for(k, s['var_map'], s['label'])
-                )
-
+        if same_case: _apply_nDevices_twin(ax, nCells_ref,xlabel_top)
         ax.grid(which='major', linestyle='--', linewidth=0.5, alpha=0.6)
-        if y_field in ('cost_on','cost_rs','fvops','throughput'):
-            ax.grid(which='minor', axis='y', linestyle='--', linewidth=0.5, alpha=0.6)
-        ax.legend(fontsize=10, loc=(1.05, 0.3))
-        _apply_cells_per_device_twin(ax, nCells_ref)
+        ax.legend(fontsize=10, loc=(1.05, -0.1))
         plt.tight_layout()
-        out_path = os.path.join(out_dir, f"{outname}.png")
-        plt.savefig(out_path, dpi=300)
-        print(f"Saved to {out_path}")
+        out_png = os.path.join(out_dir, f"{args.outname}_{y_field}.png")
+        plt.savefig(out_png, dpi=300)
+        print(f"Saved image: {out_png}")
 
-    # 1) Cost on-demand ($/TFVO) — scaled by 1e12
-    _plot_combined('cost_on', 'Cost/TFVO [$] (on-demand)', 'nSubdomains',
-                   out_cost_on, scale_1e12=True, ylim=tuple(args.y_limits) if args.y_limits else None)
+        # CSV output
+        csv_path = os.path.join(out_dir, f"{args.outname}_{y_field}.csv")
+        with open(csv_path, 'w', newline='') as f:
+            w = csv.writer(f)
+            w.writerow(['label', 'cells_per_device', 'nSubdomains', y_field])
+            for s in studies:
+                for k, v in s['data'].items():
+                    lbl = label_for(k, s['var_map'], s['label'])
+                    if should_skip(lbl): continue
+                    mult = 1e12 if scale_1e12 else 1.0
+                    for xv, pv, yv in zip(v['cells_per_device'], v['procs'], v[y_field]):
+                        w.writerow([lbl, xv, pv, yv * mult])
+        print(f"Saved table: {csv_path}")
 
-    # 2) Cost reserved ($/TFVO) — scaled by 1e12
-    _plot_combined('cost_rs', 'Cost/TFVO [$] (3yr reserved)', 'nSubdomains',
-                   out_cost_rs, scale_1e12=True, ylim=tuple(args.y_limits) if args.y_limits else None)
+    # ---------- Plots ----------
+    _plot_combined('cost_on', 'Cost/TFVO [$] (on-demand)', out_cost_on, scale_1e12=True)
+    _plot_combined('cost_rs', 'Cost/TFVO [$] (3yr reserved)', out_cost_rs, scale_1e12=True)
+    _plot_combined('fvops', 'FVOPS/device [1/s]', out_fvops, ylog=True)
+    _plot_combined('throughput', 'Throughput [FVOPS]', out_thr, ylog=True)
+    _plot_combined('times', 'Time/timestep [s]', out_tstep, ylog=True)
+    _plot_combined('pIter', 'Pressure iterations', out_piter, ylog=True)
 
-    # 3) FVOPS per device — log y
-    _plot_combined('fvops', 'FVOPS/device [1/s]', 'nSubdomains',
-                   out_fvops, ylog=True)
-
-    # 4) Throughput raw
-    _plot_combined('throughput', 'Throughput [FVOPS]', 'nSubdomains',
-                   out_thr, ylog=True)
-
-    # 5) Time per timestep — log y, x label is nDevices
-    _plot_combined('times', 'Time/timestep [s]', 'nDevices',
-                   out_tstep, ylog=True)
-
-    # 6) Pressure iterations — log y with fixed ylim, x label is nDevices
-    fig_pi, ax_pi = plt.subplots(figsize=setfig, dpi=300)
-    ax_pi.set_xscale('log'); ax_pi.set_xlabel('nDevices'); ax_pi.set_ylabel('Pressure iterations')
-    ax_pi.set_yscale('log'); ax_pi.set_ylim((1, 5000))
+    # ---------- Console output: summary ----------
+    all_variants = []
     for s_idx, s in enumerate(studies):
-        st = _STUDY_STYLES[s_idx % len(_STUDY_STYLES)]
-        palette = _PALETTE
-        present = set(s['data'].keys())
-        ordered_keys = [k for k in s['var_map'].keys() if k in present] + [k for k in present if k not in s['var_map']]
-        for i, k in enumerate(ordered_keys):
-            p = np.array(s['data'][k]['procs'])
-            y = np.array(s['data'][k]['pIter'])
-            color = palette[i % len(palette)]
-            ax_pi.plot(p, y, linestyle=st['linestyle'], marker=st['marker'], linewidth=2.5,
-                       color=color, label=label_for(k, s['var_map'], s['label']))
-    ax_pi.grid(which='major', linestyle='--', linewidth=0.5, alpha=0.6)
-    ax_pi.legend(fontsize=10, loc=(1.05, 0.5))
-    _apply_cells_per_device_twin(ax_pi, nCells_ref)
-    plt.tight_layout()
-    out_path = os.path.join(out_piter, f"{outname}.png")
-    plt.savefig(out_path, dpi=300)
-    print(f"Saved to {out_path}")
+        for k, v in s['data'].items():
+            lbl = label_for(k, s['var_map'], s['label'])
+            if should_skip(lbl): continue
+            p = np.array(v['procs'], dtype=float)
+            deff = np.array(v['fvops'], dtype=float)
+            ceff = np.array(v['cost_on'], dtype=float)
+            thr = np.array(v['throughput'], dtype=float)
+            if deff.size == 0: continue
+            i_best = int(np.argmax(deff))
+            rec = {'lbl': lbl, 'deff': float(np.max(deff)),
+                   'ceff': float(1e12 * np.min(ceff)),
+                   'teff': float(thr[i_best]),
+                   'tmax': float(max(thr)),
+                   'best_nSubdomains': int(p[i_best]) if p.size else None}
+            all_variants.append(rec)
+            print(f"[study {s_idx}] {lbl}\n  Max device eff.: {rec['deff']:.6g}\n"
+                  f"  Min cost:        {rec['ceff']:.6g}\n  FVOPS@Eff.:      {rec['teff']:.6g}\n" 
+                  f"  nSubdomains:     {rec['best_nSubdomains']}\n"
+                  f"  FVOPS max:       {rec['tmax']:.6g}")
 
-if __name__ == '__main__':
+    def pick_best(variants, substr):
+        cand = [v for v in variants if substr.lower() in v['lbl'].lower()]
+        return max(cand, key=lambda v: v['deff']) if cand else None
+
+    base = pick_best(all_variants, args.compare_base)
+    if not base:
+        print(f"\nNo baseline found matching '{args.compare_base}'\n"); return
+
+    print(f"\nBaseline: {base['lbl']} (deff={base['deff']:.6g}, "
+          f"ceff={base['ceff']:.6g}, teff={base['teff']:.6g})\n")
+    for m in compare_targets:
+        tgt = pick_best(all_variants, m)
+        if tgt is None:
+            print(f"No target found for '{m}'")
+            continue
+
+        DER  = tgt['deff'] / base['deff']
+        CTSF = base['ceff'] / tgt['ceff']
+        TTSF = tgt['teff'] / base['teff']
+
+        print(f"{m} vs BASE:")
+        print(f"  DER   = {DER:.6g}")
+        print(f"  CTSF  = {CTSF:.6g}")
+        print(f"  TTSF  = {TTSF:.6g}")
+        print(f"  Target chosen: {tgt['lbl']} "
+              f"(deff={tgt['deff']:.6g}, ceff={tgt['ceff']:.6g}, teff={tgt['teff']:.6g})\n")
+
+if __name__ == "__main__":
     main()
-

@@ -1,14 +1,47 @@
 #!/bin/bash 
 
-./plot_study.py \
-  --input path=../WindsorBody_20250806/postpro.json,times_key=TimeStep,unit=ms \
-  --input path=../WindsorBody_SPUMA_cineca_v2/postpro.json,study_mode=gpu,variation_key=preconditioner,variation_map="aDIC=SPUMA: GPU (PCG solver),none=SPUMA: GPU (GAMG solver)",times_key=clockTimeDelta,unit=s \
-  --input path=../WindsorBody_SPUMA_20250813/postpro.json,study_mode=gpu,cpu_cores_per_node=64,gpus_per_node=4,gpu_on=6.88,gpu_rsv=2.97216,variation_key=preconditioner,variation_map="aDIC=SPUMA: H100-GPU (PCG solver),none=SPUMA: H100-GPU (GAMG solver)",times_key=clockTimeDelta,unit=s \
-  --variation-key preconditioner \
-  --variation-map "FDIC=OF: CPU<br>(PCG solver),none=OF: CPU<br>(GAMG solver),BJ=OGL: CPU+GPU<br>(Ginkgo CG solver<br>+ Block Jacobi precond.),{ preconditioner Multigrid; caching 150; }=OGL: CPU+GPU<br>(Ginkgo CG solver<br>+ Multigrid precond.)" \
-  --default-gpu-hr-ondemand 2.74470525 --default-cpu-core-hr-ondemand 0.086953125 \
-  --default-gpu-hr-reserved 1.17175 --default-cpu-core-hr-reserved 0.03742 \
-  --outdir plots \
-  --outname WindsorBody
-  #--cost-group "preconditioner=FDIC:cpu:0.087:0.060,preconditioner=none:cpu:0.087:0.060" \
-  #--instance-cost "c8g.48xlarge:cpu:0.087:0.060,H100:gpu:3.60:2.60" \
+./plot_study_final.py \
+--input '[{
+  "path": "postpro_c8gn.json",
+  "times_key": "clockTimeDelta",
+  "unit": "s",
+  "cpu_hr_ondemand": 0.05925,
+  "cpu_hr_reserved": 0.01872448,
+  "variation_key": "preconditioner",
+  "variation_map": {
+    "FDIC": "c8gn.48xl\n(PCG solver)",
+    "none": "c8gn.48xl\n(GAMG solver)"
+  },
+  "cpu_cores_per_node": 192
+},
+{
+  "path": "postpro_hpc7a_opt_ompi5.json",
+  "times_key": "clockTimeDelta",
+  "unit": "s",
+  "cpu_hr_ondemand": 0.0375,
+  "cpu_hr_reserved": 0.017625,
+  "variation_key": "preconditioner",
+  "variation_map": {
+    "FDIC": "hpc7a.96xl\n(PCG solver)",
+    "none": "hpc7a.96xl\n(GAMG solver)"
+  },
+  "cpu_cores_per_node": 192
+},
+{
+  "path": "postpro_c7i_opt.json",
+  "times_key": "clockTimeDelta",
+  "unit": "s",
+  "cpu_hr_ondemand": 0.08925,
+  "cpu_hr_reserved": 0.0341997,
+  "variation_key": "preconditioner",
+  "variation_map": {
+    "FDIC": "c7i.48xl\n(PCG solver)",
+    "none": "c7i.48xl\n(GAMG solver)"
+  },
+  "cpu_cores_per_node": 96
+}]' \
+  --outdir newtest \
+  --outname newtest \
+  --color-scope global \
+  --compare-base 'c8gn' \
+  --compare-match 'hpc7a,c7i'
