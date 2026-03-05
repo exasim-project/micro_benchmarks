@@ -19,41 +19,44 @@ solvers
     p
     {
         solver          PCG;
-        preconditioner  DIC;
-        tolerance       1e-6;
+        preconditioner  diagonal;
+        tolerance       0;
         relTol          1e-2;
-        //maxIter         500;
     }
     pFinal
     {
         $p;
-        relTol          0;
     }
     Phi
     {
         $p;
     }
-
     U
     {
-        solver          smoothSolver;
-        smoother        symGaussSeidel;
-        tolerance       1e-05;
-        relTol          0;
+        solver          PBiCGStab;
+        preconditioner  diagonal;
+        tolerance       0;
+        relTol          0.1;
     }
-
     UFinal
     {
-        solver          smoothSolver;
-        smoother        symGaussSeidel;
-        tolerance       1e-05;
-        relTol          0;
+        solver          PBiCGStab;
+        preconditioner  diagonal;
+        tolerance       0;
+        relTol          0.1;
+    }
+    nuTilda
+    {
+        solver          PBiCGStab;
+        preconditioner  diagonal;
+        tolerance       0;
+        relTol          0.1;
     }
 }
 
 PISO
 {
-    momentumPredictor   no;
+    momentumPredictor   yes;
     nCorrectors     4;
     nNonOrthogonalCorrectors 0;
 //    pRefCell        0;
