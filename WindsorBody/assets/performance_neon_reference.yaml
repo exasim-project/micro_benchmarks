@@ -13,32 +13,15 @@ case:
            simulationType: LES
       - controlDict:
            writeFormat: binary
-           libs: ["libOGL.so"]
            endTime: 0.005
 variation:
       - operation: decomposePar
-        schema: "run_{partition}/deco_{numberOfSubdomains}"
+        schema: "deco_{numberOfSubdomains}"
         common:
-            method: multiLevel
-            tasksPerNode: 76
-            methods: ["kahip", "kahip", "kahip"]
-            distribution: ["auto", 4, 19]
-            levels: ["node", "gpu", "cpu"]
-        generator:
-            key: coeff
-            values: [4, 8, 10, 15, 30, 60]
-            template:
-              - numberOfSubdomains: ${{ coeff * 76 }}
-                partition: CPU
-        variation:
-          - operation: fvSolution
-            schema: "{solver}{preconditioner}"
-            values:
-              - set: solvers/p
-                solver: PCG
-                executor: CPU
-                preconditioner: DIC
-                smoother: none
+            method: scotch
+        values:
+            - numberOfSubdomains: 2
+            - numberOfSubdomains: 4
 postProcess:
   queries: ["executor", "preconditioner", "ranksPerGPU", "nCells", "numberOfSubdomains", "fuse", "ClockTime", "timeStepContErrors_sumLocal"]
   matcher:
